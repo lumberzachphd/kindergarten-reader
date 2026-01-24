@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kindergarten Reader</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* Dark Mode Palette */
+            --primary: #5D9CEC;   /* Lighter blue for dark mode */
+            --success: #48CFAD;   /* Mint green */
+            --background: #121212; /* Very dark grey */
+            --card-bg: #1E1E1E;    /* Slightly lighter grey */
+            --text-main: #FFFFFF;
+            --text-muted: #A0A0A0;
+            --zoo-bg: #181818;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Top Bar */
+        header {
+            width: 100%;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mode-toggle {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: var(--primary);
+            color: #121212;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Main Card Area */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            perspective: 1000px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 600px;
+            height: 60%;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .word-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+        
+        .word-display.sentence-mode {
+            font-size: 2.5rem; 
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        button {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+        }
+
+        .btn-speak { background: var(--primary); color: #121212; }
+        .btn-check { background: var(--success); color: #121212; width: 100px; height: 100px; font-size: 3rem; }
+
+        /* Critter Zoo (Bottom) */
+        .zoo-container {
+            width: 100%;
+            height: 120px;
+            background: var(--zoo-bg);
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            overflow-x: auto;
+            border-top: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        .critter {
+            font-size: 3rem;
+            margin-right: 15px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .correct-animation {
+            border: 5px solid var(--success);
+            transform: scale(1.05);
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-size: 1.2rem; font-weight: bold;">⭐ <span id="score">0</span></div>
+    <button class="mode-toggle" onclick="toggleMode()">Mode: Words</button>
+</header>
+
+<main>
+    <div class="card" id="card">
+        <div class="word-display" id="display-text">Loading...</div>
+        
+        <div class="controls">
+            <button class="btn-large btn-speak" onclick="speakText()" aria-label="Listen">
+                🔊
+            </button>
+            <button class="btn-large btn-check" onclick="markCorrect()" aria-label="I got it right">
+                ✓
+            </button>
+        </div>
+        
+        <div style="color: var(--text-muted); margin-top: 10px; font-size: 0.9rem;">
+            Read it, then check!
+        </div>
+    </div>
+</main>
+
+<div class="zoo-container" id="zoo">
+    <div style="padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;">Collect critters here...</div>
+</div>
+
+<script>
+    // --- Configuration ---
+    
+    // 1. "Word Mode" List
+    const allWords = [
+        "me", "at", "they", "look", "will", "has", "said", "was", "is", "and", 
+        "I", "with", "can", "have", "go", "do", "she", "want", "am", "on", 
+        "play", "you", "make", "my", "a", "like", "we", "see", "went", "what", 
+        "he", "to", "it", "the", "are", "mom", "dad"
+    ];
+
+    // 2. Strict Grammar Categories
+    const wordBank = {
+        sub_singular: ["He", "She", "It", "Mom", "Dad"],
+        sub_plural: ["We", "They", "You"],
+        verb_transitive: ["see", "make", "have", "want", "like"],
+        verb_movement: ["play", "look", "go"],
+        object_person: ["me", "you", "Mom", "Dad", "it", "us", "them"], 
+        modal: ["can", "will"]
+    };
+
+    // 3. Grammar-Safe Templates
+    const templates = [
+        "[sub_singular] [modal] [verb_movement].",     
+        "[sub_plural] [modal] [verb_transitive] it.",  
+        "[sub_singular] went to [verb_movement].",     
+        "I went to [verb_movement].",                   
+        "[sub_plural] [verb_transitive] [object_person].", 
+        "I [verb_transitive] [object_person].",            
+        "[sub_singular] is with [object_person].",      
+        "I am with [object_person].",                   
+        "[sub_plural] are on it.",                      
+        "Look at [object_person].",                     
+        "Do you [verb_transitive] it?",                 
+        "What do you [verb_transitive]?",               
+        "[sub_singular] said to [verb_movement]."       
+    ];
+
+    const critters = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧"];
+
+    // --- State ---
+    let currentText = "";
+    let score = 0;
+    let progressToNextCritter = 0;
+    const CRITTER_THRESHOLD = 5; 
+    let isSentenceMode = false;
+    let voices = [];
+
+    // --- Initialization ---
+    window.onload = function() {
+        nextItem();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+    };
+
+    function loadVoices() {
+        voices = window.speechSynthesis.getVoices();
+        const preferredVoices = ["Google US English", "Samantha", "Karen", "Daniel"];
+        let selectedVoice = voices.find(v => preferredVoices.includes(v.name));
+        if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];
+    }
+
+    // --- Core Logic ---
+    function toggleMode() {
+        isSentenceMode = !isSentenceMode;
+        document.querySelector('.mode-toggle').innerText = isSentenceMode ? "Mode: Sentences" : "Mode: Words";
+        const display = document.getElementById('display-text');
+        
+        if (isSentenceMode) {
+            display.classList.add('sentence-mode');
+        } else {
+            display.classList.remove('sentence-mode');
+        }
+        nextItem();
+    }
+
+    function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateSentence() {
+        let template = getRandom(templates);
+        return template.replace(/\[(\w+)\]/g, (match, type) => {
+            if (wordBank[type]) return getRandom(wordBank[type]);
+            return match; 
+        });
+    }
+
+    function nextItem() {
+        const card = document.getElementById('card');
+        card.classList.remove('correct-animation');
+
+        if (isSentenceMode) {
+            currentText = generateSentence();
+        } else {
+            currentText = getRandom(allWords);
+        }
+
+        document.getElementById('display-text').innerText = currentText;
+    }
+
+    // --- TTS FUNCTION ---
+    function speakText() {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(currentText);
+        
+        const preferredVoices = ["Google US English", "Samantha", "Karen", "Daniel"]; 
+        const bestVoice = voices.find(v => preferredVoices.some(p => v.name.includes(p)));
+        if (bestVoice) utterance.voice = bestVoice;
+
+        utterance.rate = 0.8; 
+        utterance.pitch = 1.1; 
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function markCorrect() {
+        score++;
+        progressToNextCritter++;
+        document.getElementById('score').innerText = score;
+
+        const card = document.getElementById('card');
+        card.classList.add('correct-animation');
+        
+        confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#2ECC71', '#F1C40F', '#3498DB'] // Keep bright confetti
+        });
+
+        if (progressToNextCritter >= CRITTER_THRESHOLD) {
+            unlockCritter();
+            progressToNextCritter = 0;
+        }
+
+        setTimeout(() => {
+            nextItem();
+        }, 800); 
+    }
+
+    function unlockCritter() {
+        const zoo = document.getElementById('zoo');
+        if (score <= CRITTER_THRESHOLD) zoo.innerHTML = "";
+
+        const newCritter = document.createElement('div');
+        newCritter.className = 'critter';
+        newCritter.innerText = getRandom(critters);
+        zoo.prepend(newCritter); 
+
+        confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.8 }
+        });
+    }
+</script>
+</body>
+</html>
