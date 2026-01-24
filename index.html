@@ -18,6 +18,11 @@
             --border-color: #333;
         }
 
+        /* Global Box Sizing to prevent padding from breaking layout */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
             background-color: var(--background);
@@ -26,7 +31,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* 100dvh fixes the "cut off" issue on mobile browsers with address bars */
+            /* 100dvh adapts to mobile browser address bars so nothing is cut off */
             height: 100dvh; 
             overflow: hidden;
             touch-action: manipulation;
@@ -41,7 +46,6 @@
             align-items: center;
             background: var(--card-bg);
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            box-sizing: border-box;
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0; /* Prevents header from shrinking */
         }
@@ -64,15 +68,15 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            padding: 20px; /* Adds safety padding so box isn't edge-to-edge */
-            box-sizing: border-box;
+            padding: 20px; 
         }
 
         .card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 500px; /* Slightly narrower for better phone look */
-            min-height: 50%;  /* Flexible height */
+            max-width: 500px;
+            /* Removed fixed height so it adapts to content, preventing cutoff */
+            min-height: 50%; 
             border-radius: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex;
@@ -82,20 +86,21 @@
             text-align: center;
             padding: 20px;
             border: 1px solid var(--border-color);
-            position: relative; /* For shake animation */
+            position: relative; 
         }
 
         .word-display {
-            font-size: 4.5rem; /* Slightly smaller to fit phone screens better */
+            font-size: 4rem; /* Adjusted for mobile safety */
             font-weight: bold;
             color: var(--text-main);
             margin-bottom: 30px;
             line-height: 1.1;
-            word-wrap: break-word; /* Prevents long words from breaking layout */
+            word-wrap: break-word; 
+            max-width: 100%;
         }
         
         .word-display.sentence-mode {
-            font-size: 2.2rem; 
+            font-size: 2rem; 
         }
 
         /* Controls Layout */
@@ -109,7 +114,7 @@
 
         .action-row {
             display: flex;
-            gap: 40px; /* Space between X and Check */
+            gap: 30px; 
             justify-content: center;
             width: 100%;
         }
@@ -122,7 +127,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 6px 0 rgba(0,0,0,0.4); /* Thicker shadow for "press" feel */
+            box-shadow: 0 6px 0 rgba(0,0,0,0.4); 
         }
 
         button:active {
@@ -131,19 +136,19 @@
         }
 
         .btn-round {
-            width: 90px;
-            height: 90px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            font-size: 3rem;
-            color: #121212; /* Dark text on colored buttons */
+            font-size: 2.5rem;
+            color: #121212; 
         }
 
         .btn-speak { 
             background: var(--primary); 
-            width: 70px;
-            height: 70px;
-            font-size: 2rem;
-            margin-top: 10px;
+            width: 60px;
+            height: 60px;
+            font-size: 1.8rem;
+            margin-top: 5px;
         }
         
         .btn-check { background: var(--success); }
@@ -152,15 +157,14 @@
         /* Critter Zoo (Bottom) */
         .zoo-container {
             width: 100%;
-            height: 100px; /* Fixed height */
+            height: 100px; 
             background: var(--zoo-bg);
             display: flex;
             align-items: center;
             padding: 10px 20px;
             overflow-x: auto;
             border-top: 1px solid var(--border-color);
-            box-sizing: border-box;
-            flex-shrink: 0; /* Prevents zoo from disappearing */
+            flex-shrink: 0; /* Ensures zoo stays visible */
         }
 
         .critter {
@@ -241,7 +245,7 @@
         "he", "to", "it", "the", "are", "mom", "dad"
     ];
 
-    // 2. Strict Grammar Categories
+    // 2. Grammar Categories
     const wordBank = {
         sub_singular: ["He", "She", "It", "Mom", "Dad"],
         sub_plural: ["We", "They", "You"],
@@ -251,7 +255,7 @@
         modal: ["can", "will"]
     };
 
-    // 3. Grammar-Safe Templates
+    // 3. Templates
     const templates = [
         "[sub_singular] [modal] [verb_movement].",     
         "[sub_plural] [modal] [verb_transitive] it.",  
@@ -278,7 +282,7 @@
     let isSentenceMode = false;
     let voices = [];
     
-    // Struggle Pile: Stores words/sentences they got wrong
+    // Struggle Pile
     let strugglePile = [];
 
     // --- Initialization ---
@@ -326,21 +330,29 @@
         const card = document.getElementById('card');
         card.classList.remove('correct-animation', 'shake-animation');
 
-        // Logic for picking next item
-        // 50% chance to pick from "Struggle Pile" if it has items
-        if (strugglePile.length > 0 && Math.random() > 0.5) {
-            // Pick from struggle pile
-            currentText = getRandom(strugglePile);
-            console.log("Picked from struggle pile. Pile size: " + strugglePile.length);
-        } else {
-            // Pick new
-            if (isSentenceMode) {
-                currentText = generateSentence();
-            } else {
-                currentText = getRandom(allWords);
-            }
-        }
+        let nextText = "";
+        let attempts = 0;
 
+        // UPDATED LOGIC:
+        // We use a loop to guarantee we pick a word that is DIFFERENT from the current one.
+        // This ensures they don't see the same word twice in a row, even if it's in the struggle pile.
+        do {
+            if (strugglePile.length > 0 && Math.random() > 0.5) {
+                // 50% chance to retry a word they struggled with
+                nextText = getRandom(strugglePile);
+            } else {
+                // 50% chance to pick a fresh word/sentence
+                if (isSentenceMode) {
+                    nextText = generateSentence();
+                } else {
+                    nextText = getRandom(allWords);
+                }
+            }
+            attempts++;
+            // Stop looping if we found a new word OR if we've tried 10 times (prevent infinite loop)
+        } while (nextText === currentText && attempts < 10);
+
+        currentText = nextText;
         document.getElementById('display-text').innerText = currentText;
     }
 
@@ -393,15 +405,14 @@
     }
 
     function markWrong() {
-        // Add current word to struggle pile TWICE so it shows up more often
+        // Add current word to struggle pile TWICE so it shows up more often later
         strugglePile.push(currentText);
         strugglePile.push(currentText);
 
         const card = document.getElementById('card');
         card.classList.add('shake-animation');
 
-        // No score increase, no confetti.
-        // Wait longer (1.5s) so they can look at the word they got wrong.
+        // Wait 1.5s for the animation to play, then FORCE a new word
         setTimeout(() => {
             nextItem();
         }, 1500);
