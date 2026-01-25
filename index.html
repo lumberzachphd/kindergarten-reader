@@ -41,6 +41,8 @@
             touch-action: manipulation;
         }
 
+        .hidden { display: none !important; }
+
         /* --- START SCREEN --- */
         #start-screen {
             position: fixed;
@@ -183,6 +185,16 @@
         .btn-speak { background: var(--primary); width: 60px; height: 60px; font-size: 1.8rem; margin-top: 5px; }
         .btn-check { background: var(--success); }
         .btn-wrong { background: var(--danger); }
+        
+        .btn-restart {
+            background: var(--primary);
+            color: #121212;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 30px;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
 
         /* --- GAME TRACK & CHARACTER --- */
         .track-container {
@@ -205,12 +217,24 @@
             z-index: 5;
         }
 
+        /* Trophy Held by Character */
+        .char-trophy {
+            position: absolute;
+            font-size: 2.5rem;
+            top: -10px;
+            right: -15px;
+            z-index: 10;
+            display: none; /* Hidden until win */
+        }
+
         .char-svg { width: 100%; height: 100%; }
         .skin-fill { fill: var(--char-skin); }
         .hair-fill { fill: var(--char-hair); }
         .shirt-fill { fill: var(--char-shirt); }
 
         .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
+        
+        /* The finish line trophy on the ground */
         .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
 
         /* Animations */
@@ -223,6 +247,13 @@
         .shake-animation { animation: shake 0.5s; border: 5px solid var(--danger); }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         .correct-animation { border: 5px solid var(--success); transform: scale(1.02); }
+
+        /* Victory Dance */
+        .dance-anim { animation: dance 0.6s infinite alternate ease-in-out; }
+        @keyframes dance {
+            0% { transform: translateY(0) rotate(-10deg); }
+            100% { transform: translateY(-20px) rotate(10deg); }
+        }
 
     </style>
 </head>
@@ -274,13 +305,15 @@
     <div class="card" id="card">
         <div class="word-display" id="display-text">Loading...</div>
         
-        <div class="controls-container">
+        <div class="controls-container" id="game-controls">
             <div class="action-row">
                 <button class="btn-round btn-wrong" onclick="markWrong()" aria-label="Incorrect">✖</button>
                 <button class="btn-round btn-check" onclick="markCorrect()" aria-label="Correct">✓</button>
             </div>
             <button class="btn-round btn-speak" onclick="speakText()" aria-label="Listen">🔊</button>
         </div>
+
+        <button class="btn-restart" id="restart-btn" onclick="resetGame()">Play Again 🔄</button>
     </div>
 </main>
 
@@ -288,9 +321,10 @@
     <div class="obstacle" style="left: 20%;">🍄</div>
     <div class="obstacle" style="left: 45%;">🪨</div>
     <div class="obstacle" style="left: 70%;">🪵</div>
-    <div class="finish-line">🏆</div>
+    <div class="finish-line" id="ground-trophy">🏆</div>
 
     <div class="character-wrapper idle-anim" id="character">
+        <div class="char-trophy" id="char-trophy">🏆</div>
         <svg class="char-svg" viewBox="0 0 60 80">
             <rect x="15" y="60" width="10" height="20" fill="#333" />
             <rect x="35" y="60" width="10" height="20" fill="#333" />
@@ -342,10 +376,9 @@
     let isSentenceMode = false;
     let strugglePileWords = [];
     let strugglePileSentences = [];
-    
-    // Progress Tracking
     let correctWordsSet = new Set();
     const TOTAL_GOAL = allWords.length;
+    let celebrationInterval = null; // To hold the confetti timer
 
     // --- Setup Functions ---
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
@@ -388,42 +421,27 @@
 
         let nextText = "";
         let attempts = 0;
-        
-        // Decide which pile to use
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
 
         do {
-            // Priority 1: Struggle Pile (50% chance if available)
             if (currentStrugglePile.length > 0 && Math.random() > 0.5) {
                 nextText = getRandom(currentStrugglePile);
             } 
-            // Priority 2: Smart Selection (Word Mode only)
             else if (!isSentenceMode) {
-                // Find words not yet mastered
                 const unmastered = allWords.filter(w => !correctWordsSet.has(w));
-                
-                if (unmastered.length > 0) {
-                    // Pick strictly from new/unmastered words
-                    nextText = getRandom(unmastered);
-                } else {
-                    // Victory Lap: If all mastered, pick random (or could trigger Win)
-                    nextText = getRandom(allWords);
-                }
+                if (unmastered.length > 0) nextText = getRandom(unmastered);
+                else nextText = getRandom(allWords);
             }
-            // Priority 3: Sentence Mode (Random Gen)
             else {
                 nextText = generateSentence();
             }
-
             attempts++;
-            // Ensure we don't pick the exact same text as last time
         } while (nextText === currentText && attempts < 10);
 
         currentText = nextText;
         document.getElementById('display-text').innerText = currentText;
     }
 
-    // --- Audio ---
     function speakText() {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(currentText);
@@ -432,26 +450,26 @@
 
     // --- Grading & Animation ---
     function markCorrect() {
-        // Remove from struggle pile if it was there
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
         const pileIndex = currentStrugglePile.indexOf(currentText);
         if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        // Update Progress (Only count WORDS towards the "Level Progress")
         if (!isSentenceMode) {
             if (!correctWordsSet.has(currentText)) {
                 correctWordsSet.add(currentText);
                 moveCharacter();
             }
         } else {
-            // Small hop for sentences
             moveCharacter(true);
         }
 
         const card = document.getElementById('card');
         card.classList.add('correct-animation');
         
-        setTimeout(() => { nextItem(); }, 800); 
+        // Wait briefly then go to next word if NOT winning
+        if (correctWordsSet.size < TOTAL_GOAL) {
+            setTimeout(() => { nextItem(); }, 800); 
+        }
     }
 
     function markWrong() {
@@ -470,34 +488,94 @@
     function moveCharacter(isSentenceHop = false) {
         const charEl = document.getElementById('character');
         
-        const maxPercent = 90; 
+        // Check if won
         const currentCount = correctWordsSet.size;
+        const hasWon = currentCount >= TOTAL_GOAL;
         
-        // Calculate position based on Word Mastery
-        let percent = (currentCount / TOTAL_GOAL) * maxPercent;
+        // Calculate Percent
+        // If won, force 100% position (right on top of trophy)
+        // Otherwise use the 90% scaling logic
+        let leftPos;
         
-        // Animations
+        if (hasWon && !isSentenceMode) {
+             // Move all the way to the trophy (subtracting char width)
+            leftPos = "calc(100% - 70px)";
+        } else {
+            // Normal movement
+            const maxPercent = 85; 
+            let percent = (currentCount / TOTAL_GOAL) * maxPercent;
+            leftPos = `calc(${percent}% + 10px)`;
+        }
+
         charEl.classList.remove('idle-anim');
         charEl.classList.add('jump-anim');
         
-        // Only move forward significantly if it's a word mastery step
         if (!isSentenceHop) {
-            charEl.style.left = `calc(${percent}% + 10px)`;
+            charEl.style.left = leftPos;
         }
 
+        // After jump lands
         setTimeout(() => {
             charEl.classList.remove('jump-anim');
-            charEl.classList.add('idle-anim');
+            
+            if (hasWon && !isSentenceMode) {
+                triggerWin(); // Start the party!
+            } else {
+                charEl.classList.add('idle-anim');
+            }
         }, 500);
-
-        if (currentCount >= TOTAL_GOAL) {
-            triggerWin();
-        }
     }
 
     function triggerWin() {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        // 1. Text Update
         document.getElementById('display-text').innerText = "YOU DID IT!";
+        
+        // 2. Hide Game Controls / Show Restart
+        document.getElementById('game-controls').style.display = 'none';
+        document.getElementById('restart-btn').style.display = 'block';
+
+        // 3. Hide Ground Trophy / Show Held Trophy
+        document.getElementById('ground-trophy').style.opacity = '0';
+        document.getElementById('char-trophy').style.display = 'block';
+
+        // 4. Character Dances
+        const charEl = document.getElementById('character');
+        charEl.classList.add('dance-anim');
+
+        // 5. Infinite Confetti Loop
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        
+        if (celebrationInterval) clearInterval(celebrationInterval);
+        celebrationInterval = setInterval(() => {
+            confetti({ particleCount: 100, spread: 120, origin: { y: 0.7 } });
+        }, 2000);
+    }
+
+    function resetGame() {
+        // Stop Party
+        if (celebrationInterval) clearInterval(celebrationInterval);
+        
+        // Reset State
+        correctWordsSet.clear();
+        strugglePileWords = [];
+        strugglePileSentences = [];
+        score = 0;
+        
+        // Reset UI
+        document.getElementById('game-controls').style.display = 'flex';
+        document.getElementById('restart-btn').style.display = 'none';
+        
+        // Reset Character
+        const charEl = document.getElementById('character');
+        charEl.style.left = '10px';
+        charEl.classList.remove('dance-anim');
+        charEl.classList.add('idle-anim');
+        
+        document.getElementById('char-trophy').style.display = 'none';
+        document.getElementById('ground-trophy').style.opacity = '1';
+
+        // Start New Item
+        nextItem();
     }
 </script>
 </body>
