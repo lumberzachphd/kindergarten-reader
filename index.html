@@ -372,7 +372,7 @@
     const WORD_GOAL = allWords.length;
 
     let sentenceScore = 0;
-    const SENTENCE_GOAL = 10; // Sentences needed to win
+    const SENTENCE_GOAL = 10; 
 
     // --- Setup Functions ---
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
@@ -391,17 +391,14 @@
         document.querySelector('.mode-toggle').innerText = isSentenceMode ? "Mode: Sentences" : "Mode: Words";
         const display = document.getElementById('display-text');
         
-        // Reset position visually when switching modes (optional, but cleaner)
-        // Note: Progress is preserved in variables, just re-rendered
         if (isSentenceMode) {
             display.classList.add('sentence-mode');
         } else {
             display.classList.remove('sentence-mode');
         }
         
-        // Update character position based on new mode's score
-        updateCharacterPosition();
-        nextItem();
+        // AUTOMATIC RESTART: When switching, reset game completely
+        resetGame();
     }
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -453,7 +450,6 @@
         const pileIndex = currentStrugglePile.indexOf(currentText);
         if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        // Update Score based on Mode
         if (isSentenceMode) {
             sentenceScore++;
         } else {
@@ -467,7 +463,6 @@
         const card = document.getElementById('card');
         card.classList.add('correct-animation');
         
-        // Only next item if NOT won (updateCharacterPosition handles win trigger)
         let hasWon = isSentenceMode ? (sentenceScore >= SENTENCE_GOAL) : (correctWordsSet.size >= WORD_GOAL);
         
         if (!hasWon) {
@@ -556,6 +551,7 @@
         strugglePileWords = [];
         strugglePileSentences = [];
         
+        // Reset UI
         document.getElementById('game-controls').style.display = 'flex';
         document.getElementById('restart-btn').style.display = 'none';
         
