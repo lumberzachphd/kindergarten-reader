@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kindergarten Reader</title>
+    <title>Sight Words!</title>
+    
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/000000/FFFFFF?text=Sight+Words!">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --primary: #5D9CEC;
-            --success: #48CFAD;   /* Green */
-            --danger: #ED5565;    /* Red */
-            --background: #121212; 
-            --card-bg: #1E1E1E;    
+            --success: #48CFAD;
+            --danger: #ED5565;
+            --background: #121212;
+            --card-bg: #1E1E1E;
             --text-main: #FFFFFF;
             --text-muted: #A0A0A0;
-            --zoo-bg: #181818;
             --border-color: #333;
+            
+            /* Character Variables (Default) */
+            --char-skin: #f1c27d;
+            --char-hair: #4a4a4a;
+            --char-shirt: #ff5e57;
         }
 
-        /* Global Box Sizing */
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
@@ -30,13 +36,71 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            height: 100dvh; 
+            height: 100dvh;
             overflow: hidden;
             touch-action: manipulation;
         }
 
-        /* Top Bar */
+        /* --- START SCREEN --- */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--background);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .setup-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            width: 80%;
+            text-align: center;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .color-dot {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+        }
+
+        .btn-start {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* --- GAME UI --- */
         header {
             width: 100%;
             padding: 15px;
@@ -44,9 +108,8 @@
             justify-content: space-between;
             align-items: center;
             background: var(--card-bg);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0; 
+            flex-shrink: 0;
         }
 
         .mode-toggle {
@@ -60,21 +123,22 @@
             cursor: pointer;
         }
 
-        /* Main Card Area */
         main {
-            flex: 1; 
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
-            padding: 20px; 
+            padding: 20px;
+            position: relative;
+            z-index: 10;
         }
 
         .card {
             background: var(--card-bg);
             width: 100%;
             max-width: 500px;
-            min-height: 50%; 
+            min-height: 40%;
             border-radius: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex;
@@ -84,126 +148,137 @@
             text-align: center;
             padding: 20px;
             border: 1px solid var(--border-color);
-            position: relative; 
         }
 
         .word-display {
-            font-size: 4rem; 
+            font-size: 4rem;
             font-weight: bold;
-            color: var(--text-main);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             line-height: 1.1;
-            word-wrap: break-word; 
-            max-width: 100%;
         }
         
-        .word-display.sentence-mode {
-            font-size: 2rem; 
-        }
+        .word-display.sentence-mode { font-size: 2rem; }
 
-        /* Controls Layout */
         .controls-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
             width: 100%;
         }
 
-        .action-row {
-            display: flex;
-            gap: 30px; 
-            justify-content: center;
-            width: 100%;
-        }
+        .action-row { display: flex; gap: 30px; justify-content: center; }
 
         button {
-            border: none;
-            outline: none;
-            cursor: pointer;
+            border: none; outline: none; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.4);
             transition: transform 0.1s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 6px 0 rgba(0,0,0,0.4); 
         }
+        button:active { transform: scale(0.95) translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.4); }
 
-        button:active {
-            transform: scale(0.95) translateY(4px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
-        }
-
-        .btn-round {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            font-size: 2.5rem;
-            color: #121212; 
-        }
-
-        .btn-speak { 
-            background: var(--primary); 
-            width: 60px;
-            height: 60px;
-            font-size: 1.8rem;
-            margin-top: 5px;
-        }
-        
+        .btn-round { width: 80px; height: 80px; border-radius: 50%; font-size: 2.5rem; color: #121212; }
+        .btn-speak { background: var(--primary); width: 60px; height: 60px; font-size: 1.8rem; margin-top: 5px; }
         .btn-check { background: var(--success); }
         .btn-wrong { background: var(--danger); }
 
-        /* Critter Zoo (Bottom) */
-        .zoo-container {
+        /* --- GAME TRACK & CHARACTER --- */
+        .track-container {
             width: 100%;
-            height: 100px; 
-            background: var(--zoo-bg);
-            display: flex;
-            align-items: center;
-            padding: 10px 20px;
-            overflow-x: auto;
-            border-top: 1px solid var(--border-color);
-            flex-shrink: 0; 
+            height: 140px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 50%, #4CAF50 50%, #2E7D32 100%);
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid #333;
+            flex-shrink: 0;
         }
 
-        .critter {
+        /* The Character (SVG) */
+        .character-wrapper {
+            width: 60px;
+            height: 80px;
+            position: absolute;
+            bottom: 30px; /* Sitting on the grass */
+            left: 10px;
+            transition: left 0.5s ease-in-out, transform 0.3s;
+            z-index: 5;
+        }
+
+        /* Simple SVG Character Styles */
+        .char-svg { width: 100%; height: 100%; }
+        .skin-fill { fill: var(--char-skin); }
+        .hair-fill { fill: var(--char-hair); }
+        .shirt-fill { fill: var(--char-shirt); }
+
+        /* Obstacles / Decor */
+        .obstacle {
+            position: absolute;
+            bottom: 30px;
+            font-size: 2rem;
+            z-index: 1;
+        }
+        
+        .finish-line {
+            position: absolute;
+            right: 10px;
+            bottom: 30px;
             font-size: 3rem;
-            margin-right: 15px;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
         }
 
         /* Animations */
-        .correct-animation {
-            border: 5px solid var(--success);
-            transform: scale(1.02);
-        }
+        .idle-anim { animation: bounce 2s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-        .shake-animation {
-            animation: shake 0.5s;
-            border: 5px solid var(--danger);
-        }
+        .jump-anim { animation: jump 0.5s ease-out; }
+        @keyframes jump { 0% { transform: translateY(0); } 50% { transform: translateY(-40px) translateX(10px); } 100% { transform: translateY(0); } }
 
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
+        .shake-animation { animation: shake 0.5s; border: 5px solid var(--danger); }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .correct-animation { border: 5px solid var(--success); transform: scale(1.02); }
 
     </style>
 </head>
 <body>
 
+<div id="start-screen">
+    <div class="setup-card">
+        <h1>Who is playing?</h1>
+        <input type="text" id="player-name" placeholder="Type Name Here" value="Super Reader">
+        
+        <p>Skin Color</p>
+        <div class="color-picker">
+            <div class="color-dot" style="background:#f1c27d" onclick="setSkin('#f1c27d')"></div>
+            <div class="color-dot" style="background:#8d5524" onclick="setSkin('#8d5524')"></div>
+            <div class="color-dot" style="background:#c68642" onclick="setSkin('#c68642')"></div>
+            <div class="color-dot" style="background:#e0ac69" onclick="setSkin('#e0ac69')"></div>
+        </div>
+
+        <p>Hair Color</p>
+        <div class="color-picker">
+            <div class="color-dot" style="background:#4a4a4a" onclick="setHair('#4a4a4a')"></div>
+            <div class="color-dot" style="background:#e6a73c" onclick="setHair('#e6a73c')"></div>
+            <div class="color-dot" style="background:#703a19" onclick="setHair('#703a19')"></div>
+            <div class="color-dot" style="background:#b33939" onclick="setHair('#b33939')"></div>
+        </div>
+
+        <div style="margin: 20px auto; width: 60px; height: 80px;">
+            <svg class="char-svg" viewBox="0 0 60 80">
+                <rect x="15" y="60" width="10" height="20" fill="#333" />
+                <rect x="35" y="60" width="10" height="20" fill="#333" />
+                <rect x="10" y="35" width="40" height="30" rx="5" class="shirt-fill" />
+                <circle cx="30" cy="20" r="18" class="skin-fill" />
+                <circle cx="23" cy="18" r="2" fill="black" />
+                <circle cx="37" cy="18" r="2" fill="black" />
+                <path d="M10,20 Q30,-10 50,20" stroke-width="10" stroke-linecap="round" fill="none" class="hair-fill" />
+            </svg>
+        </div>
+
+        <button class="btn-start" onclick="startGame()">Let's Go!</button>
+    </div>
+</div>
+
 <header>
-    <div style="font-size: 1.2rem; font-weight: bold;">⭐ <span id="score">0</span></div>
+    <div style="font-size: 1.2rem; font-weight: bold;">👤 <span id="display-name">Player</span></div>
     <button class="mode-toggle" onclick="toggleMode()">Mode: Words</button>
 </header>
 
@@ -213,28 +288,35 @@
         
         <div class="controls-container">
             <div class="action-row">
-                <button class="btn-round btn-wrong" onclick="markWrong()" aria-label="Incorrect">
-                    ✖
-                </button>
-                <button class="btn-round btn-check" onclick="markCorrect()" aria-label="Correct">
-                    ✓
-                </button>
+                <button class="btn-round btn-wrong" onclick="markWrong()" aria-label="Incorrect">✖</button>
+                <button class="btn-round btn-check" onclick="markCorrect()" aria-label="Correct">✓</button>
             </div>
-
-            <button class="btn-round btn-speak" onclick="speakText()" aria-label="Listen">
-                🔊
-            </button>
+            <button class="btn-round btn-speak" onclick="speakText()" aria-label="Listen">🔊</button>
         </div>
     </div>
 </main>
 
-<div class="zoo-container" id="zoo">
-    <div style="padding-left: 10px; color: var(--text-muted); font-size: 0.9rem;">Collect critters here...</div>
+<div class="track-container" id="track">
+    <div class="obstacle" style="left: 20%;">🍄</div>
+    <div class="obstacle" style="left: 45%;">🪨</div>
+    <div class="obstacle" style="left: 70%;">🪵</div>
+    <div class="finish-line">🏆</div>
+
+    <div class="character-wrapper idle-anim" id="character">
+        <svg class="char-svg" viewBox="0 0 60 80">
+            <rect x="15" y="60" width="10" height="20" fill="#333" />
+            <rect x="35" y="60" width="10" height="20" fill="#333" />
+            <rect x="10" y="35" width="40" height="30" rx="5" class="shirt-fill" />
+            <circle cx="30" cy="20" r="18" class="skin-fill" />
+            <circle cx="23" cy="18" r="2" fill="black" />
+            <circle cx="37" cy="18" r="2" fill="black" />
+            <path d="M10,20 Q30,-10 50,20" stroke-width="10" stroke-linecap="round" fill="none" class="hair-fill" />
+        </svg>
+    </div>
 </div>
 
 <script>
-    // --- Configuration ---
-    
+    // --- Data ---
     const allWords = [
         "me", "at", "they", "look", "will", "has", "said", "was", "is", "and", 
         "I", "with", "can", "have", "go", "do", "she", "want", "am", "on", 
@@ -267,32 +349,25 @@
         "[sub_singular] said to [verb_movement]."       
     ];
 
-    const critters = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧"];
-
     // --- State ---
     let currentText = "";
-    let score = 0;
-    let progressToNextCritter = 0;
-    const CRITTER_THRESHOLD = 5; 
     let isSentenceMode = false;
-    let voices = [];
-    
-    // --- SEPARATE STRUGGLE PILES ---
     let strugglePileWords = [];
     let strugglePileSentences = [];
+    
+    // Progress Tracking
+    let correctWordsSet = new Set(); // Stores words correctly answered ONCE
+    const TOTAL_GOAL = allWords.length;
 
-    // --- Initialization ---
-    window.onload = function() {
+    // --- Setup Functions ---
+    function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
+    function setHair(color) { document.documentElement.style.setProperty('--char-hair', color); }
+
+    function startGame() {
+        const name = document.getElementById('player-name').value || "Super Reader";
+        document.getElementById('display-name').innerText = name;
+        document.getElementById('start-screen').style.display = 'none';
         nextItem();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
-    };
-
-    function loadVoices() {
-        voices = window.speechSynthesis.getVoices();
-        const preferredVoices = ["Google US English", "Samantha", "Karen", "Daniel"];
-        let selectedVoice = voices.find(v => preferredVoices.includes(v.name));
-        if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];
     }
 
     // --- Core Logic ---
@@ -309,9 +384,7 @@
         nextItem();
     }
 
-    function getRandom(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
+    function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     function generateSentence() {
         let template = getRandom(templates);
@@ -322,27 +395,19 @@
     }
 
     function nextItem() {
-        // Reset animations
         const card = document.getElementById('card');
         card.classList.remove('correct-animation', 'shake-animation');
 
         let nextText = "";
         let attempts = 0;
-
-        // Determine which pile to use based on mode
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
 
         do {
             if (currentStrugglePile.length > 0 && Math.random() > 0.5) {
-                // 50% chance to retry a failed item from the CORRECT pile
                 nextText = getRandom(currentStrugglePile);
             } else {
-                // 50% chance to pick a fresh item
-                if (isSentenceMode) {
-                    nextText = generateSentence();
-                } else {
-                    nextText = getRandom(allWords);
-                }
+                if (isSentenceMode) nextText = generateSentence();
+                else nextText = getRandom(allWords);
             }
             attempts++;
         } while (nextText === currentText && attempts < 10);
@@ -351,88 +416,89 @@
         document.getElementById('display-text').innerText = currentText;
     }
 
-    // --- TTS FUNCTION ---
+    // --- Audio ---
     function speakText() {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(currentText);
-        
-        const preferredVoices = ["Google US English", "Samantha", "Karen", "Daniel"]; 
-        const bestVoice = voices.find(v => preferredVoices.some(p => v.name.includes(p)));
-        if (bestVoice) utterance.voice = bestVoice;
-
-        utterance.rate = 0.8; 
-        utterance.pitch = 1.1; 
-        
         window.speechSynthesis.speak(utterance);
     }
 
-    // --- Grading Logic ---
-
+    // --- Grading & Animation ---
     function markCorrect() {
-        // Remove from the CORRECT pile
+        // Clean struggle pile
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
         const pileIndex = currentStrugglePile.indexOf(currentText);
-        
-        if (pileIndex > -1) {
-            currentStrugglePile.splice(pileIndex, 1);
-        }
+        if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        score++;
-        progressToNextCritter++;
-        document.getElementById('score').innerText = score;
+        // Update Progress (Only count WORDS towards the "Level Progress", not random sentences)
+        if (!isSentenceMode) {
+            if (!correctWordsSet.has(currentText)) {
+                correctWordsSet.add(currentText);
+                moveCharacter();
+            }
+        } else {
+            // Small movement for sentences just for fun
+            moveCharacter(true);
+        }
 
         const card = document.getElementById('card');
         card.classList.add('correct-animation');
         
-        confetti({
-            particleCount: 50,
-            spread: 60,
-            origin: { y: 0.6 },
-            colors: ['#2ECC71', '#F1C40F', '#3498DB'] 
-        });
-
-        if (progressToNextCritter >= CRITTER_THRESHOLD) {
-            unlockCritter();
-            progressToNextCritter = 0;
-        }
-
-        setTimeout(() => {
-            nextItem();
-        }, 800); 
+        setTimeout(() => { nextItem(); }, 800); 
     }
 
     function markWrong() {
-        // Add to the CORRECT pile
         if (isSentenceMode) {
             strugglePileSentences.push(currentText);
-            strugglePileSentences.push(currentText); // Add twice for frequency
+            strugglePileSentences.push(currentText);
         } else {
             strugglePileWords.push(currentText);
             strugglePileWords.push(currentText);
         }
-
         const card = document.getElementById('card');
         card.classList.add('shake-animation');
-
-        setTimeout(() => {
-            nextItem();
-        }, 1500);
+        setTimeout(() => { nextItem(); }, 1500);
     }
 
-    function unlockCritter() {
-        const zoo = document.getElementById('zoo');
-        if (score <= CRITTER_THRESHOLD) zoo.innerHTML = "";
+    function moveCharacter(isSmallStep = false) {
+        const charEl = document.getElementById('character');
+        
+        // Calculate Percentage
+        // We subtract 60px (char width) to keep him on screen
+        const maxPercent = 90; 
+        const currentCount = correctWordsSet.size;
+        
+        let percent = (currentCount / TOTAL_GOAL) * maxPercent;
+        
+        if (isSentenceMode) {
+            // Sentences don't advance the "main" level goal, but give a small hop?
+            // Actually, let's just let them jump but not move forward significantly
+            // or maybe just keep the current percent.
+            // For now, let's keep position based on Word Mastery.
+        }
 
-        const newCritter = document.createElement('div');
-        newCritter.className = 'critter';
-        newCritter.innerText = getRandom(critters);
-        zoo.prepend(newCritter); 
+        // Apply Jump Animation
+        charEl.classList.remove('idle-anim');
+        charEl.classList.add('jump-anim');
+        
+        // Move Forward
+        charEl.style.left = `calc(${percent}% + 10px)`;
 
-        confetti({
-            particleCount: 150,
-            spread: 100,
-            origin: { y: 0.8 }
-        });
+        // Reset to idle after jump
+        setTimeout(() => {
+            charEl.classList.remove('jump-anim');
+            charEl.classList.add('idle-anim');
+        }, 500);
+
+        // Check Win
+        if (currentCount >= TOTAL_GOAL) {
+            triggerWin();
+        }
+    }
+
+    function triggerWin() {
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        document.getElementById('display-text').innerText = "YOU DID IT!";
     }
 </script>
 </body>
