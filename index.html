@@ -67,7 +67,9 @@
         input {
             padding: 10px;
             border-radius: 10px;
-            border: none;
+            border: 1px solid #555;
+            background: #333;
+            color: white;
             font-size: 1.2rem;
             margin: 10px 0;
             width: 80%;
@@ -90,7 +92,7 @@
 
         .btn-start {
             background: var(--success);
-            color: white;
+            color: #121212;
             border: none;
             padding: 15px 40px;
             border-radius: 30px;
@@ -193,37 +195,23 @@
             flex-shrink: 0;
         }
 
-        /* The Character (SVG) */
         .character-wrapper {
             width: 60px;
             height: 80px;
             position: absolute;
-            bottom: 30px; /* Sitting on the grass */
+            bottom: 30px;
             left: 10px;
             transition: left 0.5s ease-in-out, transform 0.3s;
             z-index: 5;
         }
 
-        /* Simple SVG Character Styles */
         .char-svg { width: 100%; height: 100%; }
         .skin-fill { fill: var(--char-skin); }
         .hair-fill { fill: var(--char-hair); }
         .shirt-fill { fill: var(--char-shirt); }
 
-        /* Obstacles / Decor */
-        .obstacle {
-            position: absolute;
-            bottom: 30px;
-            font-size: 2rem;
-            z-index: 1;
-        }
-        
-        .finish-line {
-            position: absolute;
-            right: 10px;
-            bottom: 30px;
-            font-size: 3rem;
-        }
+        .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
+        .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
 
         /* Animations */
         .idle-anim { animation: bounce 2s infinite ease-in-out; }
@@ -356,7 +344,7 @@
     let strugglePileSentences = [];
     
     // Progress Tracking
-    let correctWordsSet = new Set(); // Stores words correctly answered ONCE
+    let correctWordsSet = new Set();
     const TOTAL_GOAL = allWords.length;
 
     // --- Setup Functions ---
@@ -400,16 +388,35 @@
 
         let nextText = "";
         let attempts = 0;
+        
+        // Decide which pile to use
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
 
         do {
+            // Priority 1: Struggle Pile (50% chance if available)
             if (currentStrugglePile.length > 0 && Math.random() > 0.5) {
                 nextText = getRandom(currentStrugglePile);
-            } else {
-                if (isSentenceMode) nextText = generateSentence();
-                else nextText = getRandom(allWords);
+            } 
+            // Priority 2: Smart Selection (Word Mode only)
+            else if (!isSentenceMode) {
+                // Find words not yet mastered
+                const unmastered = allWords.filter(w => !correctWordsSet.has(w));
+                
+                if (unmastered.length > 0) {
+                    // Pick strictly from new/unmastered words
+                    nextText = getRandom(unmastered);
+                } else {
+                    // Victory Lap: If all mastered, pick random (or could trigger Win)
+                    nextText = getRandom(allWords);
+                }
             }
+            // Priority 3: Sentence Mode (Random Gen)
+            else {
+                nextText = generateSentence();
+            }
+
             attempts++;
+            // Ensure we don't pick the exact same text as last time
         } while (nextText === currentText && attempts < 10);
 
         currentText = nextText;
@@ -425,19 +432,19 @@
 
     // --- Grading & Animation ---
     function markCorrect() {
-        // Clean struggle pile
+        // Remove from struggle pile if it was there
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
         const pileIndex = currentStrugglePile.indexOf(currentText);
         if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        // Update Progress (Only count WORDS towards the "Level Progress", not random sentences)
+        // Update Progress (Only count WORDS towards the "Level Progress")
         if (!isSentenceMode) {
             if (!correctWordsSet.has(currentText)) {
                 correctWordsSet.add(currentText);
                 moveCharacter();
             }
         } else {
-            // Small movement for sentences just for fun
+            // Small hop for sentences
             moveCharacter(true);
         }
 
@@ -460,37 +467,29 @@
         setTimeout(() => { nextItem(); }, 1500);
     }
 
-    function moveCharacter(isSmallStep = false) {
+    function moveCharacter(isSentenceHop = false) {
         const charEl = document.getElementById('character');
         
-        // Calculate Percentage
-        // We subtract 60px (char width) to keep him on screen
         const maxPercent = 90; 
         const currentCount = correctWordsSet.size;
         
+        // Calculate position based on Word Mastery
         let percent = (currentCount / TOTAL_GOAL) * maxPercent;
         
-        if (isSentenceMode) {
-            // Sentences don't advance the "main" level goal, but give a small hop?
-            // Actually, let's just let them jump but not move forward significantly
-            // or maybe just keep the current percent.
-            // For now, let's keep position based on Word Mastery.
-        }
-
-        // Apply Jump Animation
+        // Animations
         charEl.classList.remove('idle-anim');
         charEl.classList.add('jump-anim');
         
-        // Move Forward
-        charEl.style.left = `calc(${percent}% + 10px)`;
+        // Only move forward significantly if it's a word mastery step
+        if (!isSentenceHop) {
+            charEl.style.left = `calc(${percent}% + 10px)`;
+        }
 
-        // Reset to idle after jump
         setTimeout(() => {
             charEl.classList.remove('jump-anim');
             charEl.classList.add('idle-anim');
         }, 500);
 
-        // Check Win
         if (currentCount >= TOTAL_GOAL) {
             triggerWin();
         }
