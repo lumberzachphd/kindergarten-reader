@@ -21,7 +21,6 @@
             --text-muted: #A0A0A0;
             --border-color: #333;
             
-            /* Character Variables (Default) */
             --char-skin: #f1c27d;
             --char-hair: #4a4a4a;
             --char-shirt: #ff5e57;
@@ -40,8 +39,6 @@
             overflow: hidden;
             touch-action: manipulation;
         }
-
-        .hidden { display: none !important; }
 
         /* --- START SCREEN --- */
         #start-screen {
@@ -193,10 +190,10 @@
             font-size: 1.5rem;
             border-radius: 30px;
             font-weight: bold;
-            display: none; /* Hidden by default */
+            display: none; 
         }
 
-        /* --- GAME TRACK & CHARACTER --- */
+        /* --- GAME TRACK --- */
         .track-container {
             width: 100%;
             height: 140px;
@@ -217,14 +214,13 @@
             z-index: 5;
         }
 
-        /* Trophy Held by Character */
         .char-trophy {
             position: absolute;
             font-size: 2.5rem;
             top: -10px;
             right: -15px;
             z-index: 10;
-            display: none; /* Hidden until win */
+            display: none; 
         }
 
         .char-svg { width: 100%; height: 100%; }
@@ -233,8 +229,6 @@
         .shirt-fill { fill: var(--char-shirt); }
 
         .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
-        
-        /* The finish line trophy on the ground */
         .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
 
         /* Animations */
@@ -248,7 +242,6 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         .correct-animation { border: 5px solid var(--success); transform: scale(1.02); }
 
-        /* Victory Dance */
         .dance-anim { animation: dance 0.6s infinite alternate ease-in-out; }
         @keyframes dance {
             0% { transform: translateY(0) rotate(-10deg); }
@@ -263,7 +256,6 @@
     <div class="setup-card">
         <h1>Who is playing?</h1>
         <input type="text" id="player-name" placeholder="Type Name Here" value="Super Reader">
-        
         <p>Skin Color</p>
         <div class="color-picker">
             <div class="color-dot" style="background:#f1c27d" onclick="setSkin('#f1c27d')"></div>
@@ -271,7 +263,6 @@
             <div class="color-dot" style="background:#c68642" onclick="setSkin('#c68642')"></div>
             <div class="color-dot" style="background:#e0ac69" onclick="setSkin('#e0ac69')"></div>
         </div>
-
         <p>Hair Color</p>
         <div class="color-picker">
             <div class="color-dot" style="background:#4a4a4a" onclick="setHair('#4a4a4a')"></div>
@@ -279,7 +270,6 @@
             <div class="color-dot" style="background:#703a19" onclick="setHair('#703a19')"></div>
             <div class="color-dot" style="background:#b33939" onclick="setHair('#b33939')"></div>
         </div>
-
         <div style="margin: 20px auto; width: 60px; height: 80px;">
             <svg class="char-svg" viewBox="0 0 60 80">
                 <rect x="15" y="60" width="10" height="20" fill="#333" />
@@ -291,7 +281,6 @@
                 <path d="M10,20 Q30,-10 50,20" stroke-width="10" stroke-linecap="round" fill="none" class="hair-fill" />
             </svg>
         </div>
-
         <button class="btn-start" onclick="startGame()">Let's Go!</button>
     </div>
 </div>
@@ -376,9 +365,14 @@
     let isSentenceMode = false;
     let strugglePileWords = [];
     let strugglePileSentences = [];
+    let celebrationInterval = null; 
+
+    // Scoring
     let correctWordsSet = new Set();
-    const TOTAL_GOAL = allWords.length;
-    let celebrationInterval = null; // To hold the confetti timer
+    const WORD_GOAL = allWords.length;
+
+    let sentenceScore = 0;
+    const SENTENCE_GOAL = 10; // Sentences needed to win
 
     // --- Setup Functions ---
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
@@ -397,11 +391,16 @@
         document.querySelector('.mode-toggle').innerText = isSentenceMode ? "Mode: Sentences" : "Mode: Words";
         const display = document.getElementById('display-text');
         
+        // Reset position visually when switching modes (optional, but cleaner)
+        // Note: Progress is preserved in variables, just re-rendered
         if (isSentenceMode) {
             display.classList.add('sentence-mode');
         } else {
             display.classList.remove('sentence-mode');
         }
+        
+        // Update character position based on new mode's score
+        updateCharacterPosition();
         nextItem();
     }
 
@@ -448,26 +447,30 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // --- Grading & Animation ---
+    // --- Grading ---
     function markCorrect() {
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
         const pileIndex = currentStrugglePile.indexOf(currentText);
         if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        if (!isSentenceMode) {
+        // Update Score based on Mode
+        if (isSentenceMode) {
+            sentenceScore++;
+        } else {
             if (!correctWordsSet.has(currentText)) {
                 correctWordsSet.add(currentText);
-                moveCharacter();
             }
-        } else {
-            moveCharacter(true);
         }
+        
+        updateCharacterPosition();
 
         const card = document.getElementById('card');
         card.classList.add('correct-animation');
         
-        // Wait briefly then go to next word if NOT winning
-        if (correctWordsSet.size < TOTAL_GOAL) {
+        // Only next item if NOT won (updateCharacterPosition handles win trigger)
+        let hasWon = isSentenceMode ? (sentenceScore >= SENTENCE_GOAL) : (correctWordsSet.size >= WORD_GOAL);
+        
+        if (!hasWon) {
             setTimeout(() => { nextItem(); }, 800); 
         }
     }
@@ -485,41 +488,40 @@
         setTimeout(() => { nextItem(); }, 1500);
     }
 
-    function moveCharacter(isSentenceHop = false) {
+    // --- Animation & Movement ---
+    function updateCharacterPosition() {
         const charEl = document.getElementById('character');
         
-        // Check if won
-        const currentCount = correctWordsSet.size;
-        const hasWon = currentCount >= TOTAL_GOAL;
+        let currentProgress, goal;
         
-        // Calculate Percent
-        // If won, force 100% position (right on top of trophy)
-        // Otherwise use the 90% scaling logic
+        if (isSentenceMode) {
+            currentProgress = sentenceScore;
+            goal = SENTENCE_GOAL;
+        } else {
+            currentProgress = correctWordsSet.size;
+            goal = WORD_GOAL;
+        }
+
+        const hasWon = currentProgress >= goal;
+        
         let leftPos;
-        
-        if (hasWon && !isSentenceMode) {
-             // Move all the way to the trophy (subtracting char width)
+        if (hasWon) {
             leftPos = "calc(100% - 70px)";
         } else {
-            // Normal movement
             const maxPercent = 85; 
-            let percent = (currentCount / TOTAL_GOAL) * maxPercent;
+            let percent = (currentProgress / goal) * maxPercent;
             leftPos = `calc(${percent}% + 10px)`;
         }
 
         charEl.classList.remove('idle-anim');
         charEl.classList.add('jump-anim');
-        
-        if (!isSentenceHop) {
-            charEl.style.left = leftPos;
-        }
+        charEl.style.left = leftPos;
 
-        // After jump lands
         setTimeout(() => {
             charEl.classList.remove('jump-anim');
             
-            if (hasWon && !isSentenceMode) {
-                triggerWin(); // Start the party!
+            if (hasWon) {
+                triggerWin(); 
             } else {
                 charEl.classList.add('idle-anim');
             }
@@ -527,22 +529,16 @@
     }
 
     function triggerWin() {
-        // 1. Text Update
         document.getElementById('display-text').innerText = "YOU DID IT!";
-        
-        // 2. Hide Game Controls / Show Restart
         document.getElementById('game-controls').style.display = 'none';
         document.getElementById('restart-btn').style.display = 'block';
 
-        // 3. Hide Ground Trophy / Show Held Trophy
         document.getElementById('ground-trophy').style.opacity = '0';
         document.getElementById('char-trophy').style.display = 'block';
 
-        // 4. Character Dances
         const charEl = document.getElementById('character');
         charEl.classList.add('dance-anim');
 
-        // 5. Infinite Confetti Loop
         confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
         
         if (celebrationInterval) clearInterval(celebrationInterval);
@@ -552,20 +548,17 @@
     }
 
     function resetGame() {
-        // Stop Party
         if (celebrationInterval) clearInterval(celebrationInterval);
         
-        // Reset State
+        // Reset scores
         correctWordsSet.clear();
+        sentenceScore = 0;
         strugglePileWords = [];
         strugglePileSentences = [];
-        score = 0;
         
-        // Reset UI
         document.getElementById('game-controls').style.display = 'flex';
         document.getElementById('restart-btn').style.display = 'none';
         
-        // Reset Character
         const charEl = document.getElementById('character');
         charEl.style.left = '10px';
         charEl.classList.remove('dance-anim');
@@ -574,7 +567,6 @@
         document.getElementById('char-trophy').style.display = 'none';
         document.getElementById('ground-trophy').style.opacity = '1';
 
-        // Start New Item
         nextItem();
     }
 </script>
