@@ -21,7 +21,7 @@
             --text-muted: #A0A0A0;
             --border-color: #333;
             
-            /* Default Character Colors */
+            /* Character Colors */
             --char-skin: #FFDFC4;
             --char-hair: #8D5524;
             --char-shirt: #3498db;
@@ -42,8 +42,6 @@
             touch-action: manipulation;
         }
 
-        .hidden { display: none !important; }
-
         /* --- START SCREEN --- */
         #start-screen {
             position: fixed;
@@ -54,8 +52,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            overflow-y: auto; /* Allow scrolling on small screens */
+            padding: 10px;
         }
 
         .setup-card {
@@ -65,51 +62,96 @@
             text-align: center;
             width: 100%;
             max-width: 400px;
+            max-height: 95vh; /* Prevent overflow on small screens */
+            overflow-y: auto;
             border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
-        h1 { margin: 10px 0; font-size: 1.5rem; }
-        p { margin: 10px 0 5px; font-size: 1rem; color: var(--text-muted); }
+        /* Preview Area */
+        .preview-container {
+            width: 120px;
+            height: 150px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        h1 { margin: 5px 0; font-size: 1.2rem; color: var(--text-muted); }
+        p { margin: 8px 0 4px; font-size: 0.9rem; color: var(--text-muted); font-weight: bold;}
 
         input {
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
-            border: 1px solid #555;
-            background: #333;
+            border: 2px solid #555;
+            background: #222;
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             margin: 5px 0;
-            width: 80%;
+            width: 90%;
             text-align: center;
+            font-weight: bold;
         }
+        
+        /* Placeholder styling */
+        ::placeholder { color: #666; opacity: 1; }
 
         .color-picker {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
             margin: 5px 0;
+            flex-wrap: wrap;
         }
 
         .color-dot {
-            width: 35px; height: 35px;
+            width: 32px; height: 32px;
             border-radius: 50%;
-            border: 3px solid #444;
+            border: 2px solid #555;
             cursor: pointer;
             transition: transform 0.2s;
         }
-        .color-dot:active { transform: scale(0.9); }
+        .color-dot:active { transform: scale(1.2); border-color: white; }
+
+        /* Hair Toggle */
+        .toggle-container {
+            display: flex;
+            background: #333;
+            border-radius: 20px;
+            padding: 4px;
+            margin: 5px 0;
+        }
+        
+        .toggle-btn {
+            padding: 8px 20px;
+            border-radius: 16px;
+            border: none;
+            background: transparent;
+            color: #aaa;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .toggle-btn.active {
+            background: var(--primary);
+            color: #121212;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
 
         .btn-start {
             background: var(--success);
             color: #121212;
             border: none;
-            padding: 12px 40px;
+            padding: 12px 50px;
             border-radius: 30px;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             margin-top: 15px;
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+            width: 90%;
         }
 
         /* --- GAME UI --- */
@@ -217,7 +259,7 @@
 
         .character-wrapper {
             width: 60px;
-            height: 90px; /* Slightly taller for new detailed character */
+            height: 90px;
             position: absolute;
             bottom: 25px;
             left: 10px;
@@ -234,12 +276,20 @@
             display: none; 
         }
 
-        /* NEW SVG STYLES */
+        /* SVG STYLES */
         .char-svg { width: 100%; height: 100%; overflow: visible; }
         .skin-fill { fill: var(--char-skin); }
         .hair-fill { fill: var(--char-hair); }
         .shirt-fill { fill: var(--char-shirt); }
         .pants-fill { fill: var(--char-pants); }
+
+        /* Hair Logic */
+        .hair-short { display: block; }
+        .hair-long { display: none; }
+        
+        /* This class will be toggled on the BODY to switch hair styles globally */
+        body.style-long-hair .hair-short { display: none; }
+        body.style-long-hair .hair-long { display: block; }
 
         .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
         .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
@@ -263,24 +313,60 @@
 
     </style>
 </head>
-<body>
-
-<div id="start-screen">
+<body class="style-short-hair"> <div id="start-screen">
     <div class="setup-card">
-        <h1>Who is playing?</h1>
-        <input type="text" id="player-name" placeholder="Type Name Here" value="Super Reader">
+        <div class="preview-container">
+            <svg class="char-svg" viewBox="0 0 100 120">
+                <rect x="35" y="80" width="12" height="25" class="pants-fill" rx="4"/>
+                <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
+                <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
+                <ellipse cx="59" cy="105" rx="8" ry="4" fill="#111"/>
+                <rect x="25" y="50" width="50" height="40" rx="10" class="shirt-fill" />
+                <rect x="15" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(20 15 52)"/>
+                <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
+                <circle cx="12" cy="65" r="5" class="skin-fill" />
+                <circle cx="88" cy="65" r="5" class="skin-fill" />
+                <circle cx="50" cy="35" r="22" class="skin-fill" />
+                <circle cx="43" cy="32" r="2.5" fill="#333" /> 
+                <circle cx="57" cy="32" r="2.5" fill="#333" /> 
+                <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+                
+                <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
+                <path class="hair-fill hair-long" d="M28,35 Q25,0 50,0 Q75,0 72,35 Q85,60 80,70 Q75,40 72,40 Q50,40 28,40 Q25,40 20,70 Q15,60 28,35" />
+            </svg>
+        </div>
+
+        <input type="text" id="player-name" placeholder="Name">
         
-        <p>Skin Color</p>
-        <div class="color-picker">
-            <div class="color-dot" style="background:#fce5cd" onclick="setSkin('#fce5cd')"></div> <div class="color-dot" style="background:#f4c7a6" onclick="setSkin('#f4c7a6')"></div> <div class="color-dot" style="background:#b47d57" onclick="setSkin('#b47d57')"></div> <div class="color-dot" style="background:#5f3e28" onclick="setSkin('#5f3e28')"></div> </div>
+        <div class="toggle-container">
+            <button class="toggle-btn active" id="btn-short" onclick="setHairStyle('short')">Short Hair</button>
+            <button class="toggle-btn" id="btn-long" onclick="setHairStyle('long')">Long Hair</button>
+        </div>
 
         <p>Hair Color</p>
         <div class="color-picker">
-            <div class="color-dot" style="background:#f1c40f" onclick="setHair('#f1c40f')"></div> <div class="color-dot" style="background:#e67e22" onclick="setHair('#e67e22')"></div> <div class="color-dot" style="background:#4a3b2a" onclick="setHair('#4a3b2a')"></div> <div class="color-dot" style="background:#000000" onclick="setHair('#000000')"></div> <div class="color-dot" style="background:#e91e63" onclick="setHair('#e91e63')"></div> </div>
+            <div class="color-dot" style="background:#f1c40f" onclick="setHair('#f1c40f')"></div> 
+            <div class="color-dot" style="background:#e67e22" onclick="setHair('#e67e22')"></div> 
+            <div class="color-dot" style="background:#4a3b2a" onclick="setHair('#4a3b2a')"></div> 
+            <div class="color-dot" style="background:#000000" onclick="setHair('#000000')"></div> 
+            <div class="color-dot" style="background:#e91e63" onclick="setHair('#e91e63')"></div> 
+        </div>
+        
+        <p>Skin Color</p>
+        <div class="color-picker">
+            <div class="color-dot" style="background:#fce5cd" onclick="setSkin('#fce5cd')"></div> 
+            <div class="color-dot" style="background:#f4c7a6" onclick="setSkin('#f4c7a6')"></div> 
+            <div class="color-dot" style="background:#b47d57" onclick="setSkin('#b47d57')"></div> 
+            <div class="color-dot" style="background:#5f3e28" onclick="setSkin('#5f3e28')"></div> 
+        </div>
 
         <p>Shirt Color</p>
         <div class="color-picker">
-            <div class="color-dot" style="background:#e74c3c" onclick="setShirt('#e74c3c')"></div> <div class="color-dot" style="background:#3498db" onclick="setShirt('#3498db')"></div> <div class="color-dot" style="background:#2ecc71" onclick="setShirt('#2ecc71')"></div> <div class="color-dot" style="background:#9b59b6" onclick="setShirt('#9b59b6')"></div> </div>
+            <div class="color-dot" style="background:#e74c3c" onclick="setShirt('#e74c3c')"></div> 
+            <div class="color-dot" style="background:#3498db" onclick="setShirt('#3498db')"></div> 
+            <div class="color-dot" style="background:#2ecc71" onclick="setShirt('#2ecc71')"></div> 
+            <div class="color-dot" style="background:#9b59b6" onclick="setShirt('#9b59b6')"></div> 
+        </div>
 
         <button class="btn-start" onclick="startGame()">Let's Go!</button>
     </div>
@@ -320,18 +406,18 @@
             <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
             <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
             <ellipse cx="59" cy="105" rx="8" ry="4" fill="#111"/>
-            
             <rect x="25" y="50" width="50" height="40" rx="10" class="shirt-fill" />
-            
             <rect x="15" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(20 15 52)"/>
             <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
-            
             <circle cx="12" cy="65" r="5" class="skin-fill" />
             <circle cx="88" cy="65" r="5" class="skin-fill" />
-            
             <circle cx="50" cy="35" r="22" class="skin-fill" />
+            <circle cx="43" cy="32" r="2.5" fill="#333" /> 
+            <circle cx="57" cy="32" r="2.5" fill="#333" /> 
+            <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
             
-            <circle cx="43" cy="32" r="2.5" fill="#333" /> <circle cx="57" cy="32" r="2.5" fill="#333" /> <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/> <path d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" class="hair-fill" />
+            <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
+            <path class="hair-fill hair-long" d="M28,35 Q25,0 50,0 Q75,0 72,35 Q85,60 80,70 Q75,40 72,40 Q50,40 28,40 Q25,40 20,70 Q15,60 28,35" />
         </svg>
     </div>
 </div>
@@ -388,9 +474,24 @@
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
     function setHair(color) { document.documentElement.style.setProperty('--char-hair', color); }
     function setShirt(color) { document.documentElement.style.setProperty('--char-shirt', color); }
+    
+    function setHairStyle(style) {
+        if (style === 'short') {
+            document.body.classList.remove('style-long-hair');
+            document.body.classList.add('style-short-hair');
+            document.getElementById('btn-short').classList.add('active');
+            document.getElementById('btn-long').classList.remove('active');
+        } else {
+            document.body.classList.remove('style-short-hair');
+            document.body.classList.add('style-long-hair');
+            document.getElementById('btn-long').classList.add('active');
+            document.getElementById('btn-short').classList.remove('active');
+        }
+    }
 
     function startGame() {
-        const name = document.getElementById('player-name').value || "Super Reader";
+        const nameInput = document.getElementById('player-name');
+        const name = nameInput.value.trim() || "Super Reader";
         document.getElementById('display-name').innerText = name;
         document.getElementById('start-screen').style.display = 'none';
         nextItem();
@@ -451,10 +552,7 @@
     function speakText() {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(currentText);
-        
-        // --- 20% SLOWER RATE ---
         utterance.rate = 0.7; 
-        
         window.speechSynthesis.speak(utterance);
     }
 
@@ -559,13 +657,11 @@
     function resetGame() {
         if (celebrationInterval) clearInterval(celebrationInterval);
         
-        // Reset scores
         correctWordsSet.clear();
         sentenceScore = 0;
         strugglePileWords = [];
         strugglePileSentences = [];
         
-        // Reset UI
         document.getElementById('game-controls').style.display = 'flex';
         document.getElementById('restart-btn').style.display = 'none';
         
