@@ -62,7 +62,7 @@
             text-align: center;
             width: 100%;
             max-width: 400px;
-            max-height: 95vh; /* Prevent overflow on small screens */
+            max-height: 95vh;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             display: flex;
@@ -95,7 +95,6 @@
             font-weight: bold;
         }
         
-        /* Placeholder styling */
         ::placeholder { color: #666; opacity: 1; }
 
         .color-picker {
@@ -283,13 +282,17 @@
         .shirt-fill { fill: var(--char-shirt); }
         .pants-fill { fill: var(--char-pants); }
 
-        /* Hair Logic */
-        .hair-short { display: block; }
-        .hair-long { display: none; }
+        /* Hair Logic - CSS Toggles */
+        .hair-short { display: none; }
+        .hair-long-front { display: none; }
+        .hair-long-back { display: none; }
         
-        /* This class will be toggled on the BODY to switch hair styles globally */
-        body.style-long-hair .hair-short { display: none; }
-        body.style-long-hair .hair-long { display: block; }
+        /* If body has 'short hair' class */
+        body.style-short-hair .hair-short { display: block; }
+
+        /* If body has 'long hair' class */
+        body.style-long-hair .hair-long-front { display: block; }
+        body.style-long-hair .hair-long-back { display: block; }
 
         .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
         .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
@@ -313,10 +316,14 @@
 
     </style>
 </head>
-<body class="style-short-hair"> <div id="start-screen">
+<body class="style-short-hair"> 
+
+<div id="start-screen">
     <div class="setup-card">
         <div class="preview-container">
             <svg class="char-svg" viewBox="0 0 100 120">
+                <path class="hair-fill hair-long-back" d="M25,35 Q15,75 20,90 Q50,100 80,90 Q85,75 75,35" />
+
                 <rect x="35" y="80" width="12" height="25" class="pants-fill" rx="4"/>
                 <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
                 <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
@@ -326,13 +333,14 @@
                 <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
                 <circle cx="12" cy="65" r="5" class="skin-fill" />
                 <circle cx="88" cy="65" r="5" class="skin-fill" />
+                
                 <circle cx="50" cy="35" r="22" class="skin-fill" />
                 <circle cx="43" cy="32" r="2.5" fill="#333" /> 
                 <circle cx="57" cy="32" r="2.5" fill="#333" /> 
                 <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
                 
                 <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
-                <path class="hair-fill hair-long" d="M28,35 Q25,0 50,0 Q75,0 72,35 Q85,60 80,70 Q75,40 72,40 Q50,40 28,40 Q25,40 20,70 Q15,60 28,35" />
+                <path class="hair-fill hair-long-front" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,25 50,25 Q25,25 28,35" />
             </svg>
         </div>
 
@@ -402,6 +410,8 @@
     <div class="character-wrapper idle-anim" id="character">
         <div class="char-trophy" id="char-trophy">🏆</div>
         <svg class="char-svg" viewBox="0 0 100 120">
+            <path class="hair-fill hair-long-back" d="M25,35 Q15,75 20,90 Q50,100 80,90 Q85,75 75,35" />
+
             <rect x="35" y="80" width="12" height="25" class="pants-fill" rx="4"/>
             <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
             <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
@@ -411,13 +421,14 @@
             <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
             <circle cx="12" cy="65" r="5" class="skin-fill" />
             <circle cx="88" cy="65" r="5" class="skin-fill" />
+            
             <circle cx="50" cy="35" r="22" class="skin-fill" />
             <circle cx="43" cy="32" r="2.5" fill="#333" /> 
             <circle cx="57" cy="32" r="2.5" fill="#333" /> 
             <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
             
             <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
-            <path class="hair-fill hair-long" d="M28,35 Q25,0 50,0 Q75,0 72,35 Q85,60 80,70 Q75,40 72,40 Q50,40 28,40 Q25,40 20,70 Q15,60 28,35" />
+            <path class="hair-fill hair-long-front" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,25 50,25 Q25,25 28,35" />
         </svg>
     </div>
 </div>
@@ -552,7 +563,10 @@
     function speakText() {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(currentText);
+        
+        // --- 30% SLOWER RATE (Updated) ---
         utterance.rate = 0.7; 
+        
         window.speechSynthesis.speak(utterance);
     }
 
