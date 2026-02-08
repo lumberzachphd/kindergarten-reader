@@ -10,7 +10,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    
     <style>
         :root {
             --primary: #5D9CEC;
@@ -22,6 +21,7 @@
             --text-muted: #A0A0A0;
             --border-color: #333;
             
+            /* Character Colors */
             --char-skin: #FFDFC4;
             --char-hair: #8D5524;
             --char-shirt: #3498db;
@@ -95,12 +95,18 @@
             flex-direction: column;
         }
 
+        /* Live Preview Container */
         .preview-container {
-            width: 120px;
-            height: 150px;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #333;
+            width: 140px;
+            height: 160px;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #444;
             padding-bottom: 10px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #fff 100%); /* Mini sky background */
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
         }
 
         h2 { margin: 0 0 10px 0; font-size: 1rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
@@ -118,8 +124,7 @@
             text-align: center;
             font-weight: bold;
         }
-        ::placeholder { color: #666; opacity: 1; }
-
+        
         .color-picker {
             display: flex;
             gap: 8px; 
@@ -184,7 +189,6 @@
         .lb-name { text-align: left; }
         .lb-score { text-align: right; font-weight: bold; color: var(--success); }
         .lb-empty { color: #666; font-style: italic; padding: 20px 0; text-align: center;}
-        .lb-loading { color: var(--primary); text-align: center; padding: 20px;}
 
         @media (max-width: 600px) {
             .setup-grid { grid-template-columns: 1fr; }
@@ -202,6 +206,7 @@
             background: var(--card-bg);
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
+            z-index: 20;
         }
 
         .mode-toggle {
@@ -271,22 +276,53 @@
             display: none; 
         }
 
-        /* --- GAME TRACK --- */
+        /* --- GAME WORLD --- */
         .track-container {
             width: 100%;
-            height: 140px;
-            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 50%, #4CAF50 50%, #2E7D32 100%);
+            height: 180px; /* Taller for scenery */
+            /* SCENERY BACKGROUND SVG */
+            background-color: #87CEEB;
+            background-image: 
+                /* Clouds */
+                radial-gradient(circle, #fff 10%, transparent 10%),
+                radial-gradient(circle, #fff 10%, transparent 10%),
+                /* Sun */
+                radial-gradient(circle, #F1C40F 20%, transparent 20%),
+                /* Hills */
+                radial-gradient(ellipse at center bottom, #2ecc71 40%, transparent 40%),
+                radial-gradient(ellipse at right bottom, #27ae60 50%, transparent 50%);
+            background-size: 
+                200px 100px, 300px 150px, /* Clouds */
+                100px 100px, /* Sun */
+                100% 200px, 100% 180px; /* Hills */
+            background-position: 
+                20px 20px, 200px 40px, /* Clouds */
+                90% 10%, /* Sun */
+                0% 100%, 80% 100%; /* Hills */
+            background-repeat: no-repeat;
             position: relative;
             overflow: hidden;
-            border-top: 4px solid #333;
             flex-shrink: 0;
+            border-top: 4px solid #4A90E2;
         }
 
-        .character-wrapper {
-            width: 60px;
-            height: 90px;
+        /* The Ground Block */
+        .ground {
             position: absolute;
-            bottom: 25px;
+            bottom: 0;
+            width: 100%;
+            height: 30px;
+            background: #5d4037; /* Dirt */
+            border-top: 8px solid #4CAF50; /* Grass top */
+            z-index: 2;
+        }
+
+        /* --- CHARACTER --- */
+        .character-wrapper {
+            width: 70px; /* Bigger */
+            height: 100px;
+            position: absolute;
+            bottom: 25px; /* Sit on grass */
             left: 10px;
             transition: left 0.5s ease-in-out, transform 0.3s;
             z-index: 5;
@@ -295,7 +331,7 @@
         .char-trophy { position: absolute; font-size: 2.5rem; top: -15px; right: -20px; z-index: 10; display: none; }
 
         /* SVG STYLES */
-        .char-svg { width: 100%; height: 100%; overflow: visible; }
+        .char-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.3)); }
         .skin-fill { fill: var(--char-skin); }
         .hair-fill { fill: var(--char-hair); }
         .shirt-fill { fill: var(--char-shirt); }
@@ -309,11 +345,12 @@
         body.style-long-hair .hair-long-front { display: block; }
         body.style-long-hair .hair-long-back { display: block; }
 
-        .obstacle { position: absolute; bottom: 30px; font-size: 2rem; z-index: 1; }
-        .finish-line { position: absolute; right: 10px; bottom: 30px; font-size: 3rem; }
+        .obstacle { position: absolute; bottom: 35px; font-size: 2.5rem; z-index: 3; }
+        .finish-line { position: absolute; right: 10px; bottom: 35px; font-size: 3.5rem; z-index: 3; }
 
+        /* Animations */
         .idle-anim { animation: bounce 2s infinite ease-in-out; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
         .jump-anim { animation: jump 0.5s ease-out; }
         @keyframes jump { 0% { transform: translateY(0); } 50% { transform: translateY(-40px) translateX(10px); } 100% { transform: translateY(0); } }
@@ -338,22 +375,26 @@
             <div class="char-column">
                 <div class="preview-container">
                     <svg class="char-svg" viewBox="0 0 100 120">
-                        <path class="hair-fill hair-long-back" d="M25,35 Q15,75 20,90 Q50,100 80,90 Q85,75 75,35" />
-                        <rect x="35" y="80" width="12" height="25" class="pants-fill" rx="4"/>
-                        <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
-                        <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
-                        <ellipse cx="59" cy="105" rx="8" ry="4" fill="#111"/>
-                        <rect x="25" y="50" width="50" height="40" rx="10" class="shirt-fill" />
-                        <rect x="15" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(20 15 52)"/>
-                        <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
-                        <circle cx="12" cy="65" r="5" class="skin-fill" />
-                        <circle cx="88" cy="65" r="5" class="skin-fill" />
-                        <circle cx="50" cy="35" r="22" class="skin-fill" />
-                        <circle cx="43" cy="32" r="2.5" fill="#333" /> 
-                        <circle cx="57" cy="32" r="2.5" fill="#333" /> 
-                        <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
-                        <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
-                        <path class="hair-fill hair-long-front" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,25 50,25 Q25,25 28,35" />
+                        <path class="hair-fill hair-long-back" d="M20,40 Q10,80 15,100 Q50,110 85,100 Q90,80 80,40" />
+                        
+                        <rect x="35" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+                        <rect x="52" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+                        <path d="M33,110 Q41,115 49,110" stroke="#111" stroke-width="3" fill="none"/> <path d="M51,110 Q59,115 67,110" stroke="#111" stroke-width="3" fill="none"/>
+                        
+                        <rect x="25" y="55" width="50" height="40" rx="8" class="shirt-fill" />
+                        <rect x="15" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(25 15 58)"/>
+                        <rect x="70" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(-25 85 58)"/>
+                        <circle cx="12" cy="72" r="6" class="skin-fill" />
+                        <circle cx="88" cy="72" r="6" class="skin-fill" />
+                        
+                        <circle cx="50" cy="38" r="24" class="skin-fill" />
+                        
+                        <circle cx="42" cy="36" r="3" fill="white" /> <circle cx="42" cy="36" r="1.5" fill="black" />
+                        <circle cx="58" cy="36" r="3" fill="white" /> <circle cx="58" cy="36" r="1.5" fill="black" />
+                        <path d="M45,46 Q50,50 55,46" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        
+                        <path class="hair-fill hair-short" d="M26,38 Q25,12 50,10 Q75,12 74,38 Q75,25 50,25 Q25,25 26,38" />
+                        <path class="hair-fill hair-long-front" d="M26,38 Q25,10 50,10 Q75,10 74,38 Q75,28 50,28 Q25,28 26,38" />
                     </svg>
                 </div>
 
@@ -393,7 +434,7 @@
             <div class="leaderboard-column">
                 <h2>🏆 Weekly Leaders</h2>
                 <div id="leaderboard-content">
-                    <div class="lb-loading">Connecting...</div>
+                    <div class="lb-loading">Loading...</div>
                 </div>
                 <div style="font-size: 0.8rem; color: #888; margin-top: auto; padding-top:10px;">Resets Every Monday</div>
             </div>
@@ -431,31 +472,32 @@
     <div class="obstacle" style="left: 70%;">🪵</div>
     <div class="finish-line" id="ground-trophy">🏆</div>
 
+    <div class="ground"></div>
+
     <div class="character-wrapper idle-anim" id="character">
         <div class="char-trophy" id="char-trophy">🏆</div>
         <svg class="char-svg" viewBox="0 0 100 120">
-            <path class="hair-fill hair-long-back" d="M25,35 Q15,75 20,90 Q50,100 80,90 Q85,75 75,35" />
-            <rect x="35" y="80" width="12" height="25" class="pants-fill" rx="4"/>
-            <rect x="53" y="80" width="12" height="25" class="pants-fill" rx="4"/>
-            <ellipse cx="41" cy="105" rx="8" ry="4" fill="#111"/>
-            <ellipse cx="59" cy="105" rx="8" ry="4" fill="#111"/>
-            <rect x="25" y="50" width="50" height="40" rx="10" class="shirt-fill" />
-            <rect x="15" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(20 15 52)"/>
-            <rect x="70" y="52" width="15" height="12" rx="5" class="shirt-fill" transform="rotate(-20 85 52)"/>
-            <circle cx="12" cy="65" r="5" class="skin-fill" />
-            <circle cx="88" cy="65" r="5" class="skin-fill" />
-            <circle cx="50" cy="35" r="22" class="skin-fill" />
-            <circle cx="43" cy="32" r="2.5" fill="#333" /> 
-            <circle cx="57" cy="32" r="2.5" fill="#333" /> 
-            <path d="M42,42 Q50,48 58,42" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path class="hair-fill hair-short" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,20 50,20 Q25,20 28,35" />
-            <path class="hair-fill hair-long-front" d="M28,35 Q25,10 50,8 Q75,10 72,35 Q75,25 50,25 Q25,25 28,35" />
+            <path class="hair-fill hair-long-back" d="M25,35 Q15,75 20,90 Q50,110 85,100 Q90,80 80,40" />
+            <rect x="35" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+            <rect x="52" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+            <path d="M33,110 Q41,115 49,110" stroke="#111" stroke-width="3" fill="none"/> 
+            <path d="M51,110 Q59,115 67,110" stroke="#111" stroke-width="3" fill="none"/>
+            <rect x="25" y="55" width="50" height="40" rx="8" class="shirt-fill" />
+            <rect x="15" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(25 15 58)"/>
+            <rect x="70" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(-25 85 58)"/>
+            <circle cx="12" cy="72" r="6" class="skin-fill" />
+            <circle cx="88" cy="72" r="6" class="skin-fill" />
+            <circle cx="50" cy="38" r="24" class="skin-fill" />
+            <circle cx="42" cy="36" r="3" fill="white" /> <circle cx="42" cy="36" r="1.5" fill="black" />
+            <circle cx="58" cy="36" r="3" fill="white" /> <circle cx="58" cy="36" r="1.5" fill="black" />
+            <path d="M45,46 Q50,50 55,46" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path class="hair-fill hair-short" d="M26,38 Q25,12 50,10 Q75,12 74,38 Q75,28 50,28 Q25,28 26,38" />
+            <path class="hair-fill hair-long-front" d="M26,38 Q25,10 50,10 Q75,10 74,38 Q75,28 50,28 Q25,28 26,38" />
         </svg>
     </div>
 </div>
 
 <script type="module">
-    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -463,7 +505,7 @@
     // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
     // -----------------------------------------------------------------------------------------
     const firebaseConfig = {
-        apiKey: "AIzaSyDjjBo73WLJGrM9RHG16BSm9by8mizPa4s",
+      apiKey: "AIzaSyDjjBo73WLJGrM9RHG16BSm9by8mizPa4s",
       authDomain: "kindergarten-reader.firebaseapp.com",
       databaseURL: "https://kindergarten-reader-default-rtdb.firebaseio.com",
       projectId: "kindergarten-reader",
@@ -474,18 +516,14 @@
     };
     // -----------------------------------------------------------------------------------------
 
-    // Initialize Firebase
     let db;
     try {
         const app = initializeApp(firebaseConfig);
         db = getDatabase(app);
-        console.log("Firebase Connected");
     } catch (e) {
-        console.error("Firebase Config Missing or Invalid");
-        document.getElementById('leaderboard-content').innerHTML = "<div class='lb-empty'>Database not connected.<br>See code comments.</div>";
+        document.getElementById('leaderboard-content').innerHTML = "<div class='lb-empty'>Database not connected.</div>";
     }
 
-    // Weekly ID Generator
     function getWeekID() {
         const d = new Date();
         d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -494,11 +532,9 @@
         return `week_${weekNum}_${d.getFullYear()}`;
     }
 
-    // Expose Functions to Global Scope so HTML buttons can see them
     window.saveScoreToFirebase = function(name, points) {
         if (!db || !name) return;
         const weekID = getWeekID();
-        // Uses Firebase "Atomic Increment" so two kids don't overwrite each other
         const updates = {};
         updates[`leaderboard/${weekID}/${name}`] = increment(points);
         update(ref(db), updates);
@@ -514,36 +550,27 @@
             const container = document.getElementById('leaderboard-content');
             
             if (!data) {
-                container.innerHTML = '<div class="lb-empty">New Week! Be the first to play.</div>';
+                container.innerHTML = '<div class="lb-empty">New Week! Be the first.</div>';
                 return;
             }
 
-            // Convert to array and sort
-            const sorted = Object.entries(data)
-                .sort(([,a], [,b]) => b - a)
-                .slice(0, 5);
+            const sorted = Object.entries(data).sort(([,a], [,b]) => b - a).slice(0, 5);
 
             let html = '<table class="lb-table">';
             sorted.forEach(([name, score], index) => {
                 let rank = index + 1;
                 let icon = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : rank + '.'));
-                html += `<tr>
-                    <td class="lb-rank">${icon}</td>
-                    <td class="lb-name">${name}</td>
-                    <td class="lb-score">${score}</td>
-                </tr>`;
+                html += `<tr><td class="lb-rank">${icon}</td><td class="lb-name">${name}</td><td class="lb-score">${score}</td></tr>`;
             });
             html += '</table>';
             container.innerHTML = html;
             
-            // Update personal weekly score if name matches
             if (window.currentPlayerName && data[window.currentPlayerName]) {
                  document.getElementById('weekly-score').innerText = data[window.currentPlayerName];
             }
         });
     }
 
-    // Start listening immediately
     window.listenToLeaderboard();
 </script>
 
@@ -581,27 +608,23 @@
         "[sub_singular] said to [verb_movement]."       
     ];
 
-    // --- State ---
     let currentText = "";
     let isSentenceMode = false;
     let strugglePileWords = [];
     let strugglePileSentences = [];
     let celebrationInterval = null; 
-    window.currentPlayerName = ""; // Global for Firebase to see
+    window.currentPlayerName = ""; 
 
-    // Game Session Score
     let correctWordsSet = new Set();
     const WORD_GOAL = allWords.length;
     let sentenceScore = 0;
     const SENTENCE_GOAL = 10; 
 
-    // --- Initialization ---
     window.onload = function() {
         const lastPlayer = localStorage.getItem('last_player_name');
         if (lastPlayer) document.getElementById('player-name').value = lastPlayer;
     };
 
-    // --- Setup Functions ---
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
     function setHair(color) { document.documentElement.style.setProperty('--char-hair', color); }
     function setShirt(color) { document.documentElement.style.setProperty('--char-shirt', color); }
@@ -623,27 +646,19 @@
     function startGame() {
         const nameInput = document.getElementById('player-name');
         window.currentPlayerName = nameInput.value.trim() || "Super Reader";
-        
-        // Save name local preference
         localStorage.setItem('last_player_name', window.currentPlayerName);
-        
         document.getElementById('display-name').innerText = window.currentPlayerName;
         document.getElementById('start-screen').style.display = 'none';
-        
         nextItem();
     }
 
-    // --- Core Logic ---
     function toggleMode() {
         isSentenceMode = !isSentenceMode;
         document.querySelector('.mode-toggle').innerText = isSentenceMode ? "Mode: Sentences" : "Mode: Words";
         const display = document.getElementById('display-text');
         
-        if (isSentenceMode) {
-            display.classList.add('sentence-mode');
-        } else {
-            display.classList.remove('sentence-mode');
-        }
+        if (isSentenceMode) display.classList.add('sentence-mode');
+        else display.classList.remove('sentence-mode');
         
         resetGame();
     }
@@ -692,24 +707,19 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // --- Grading ---
     function markCorrect() {
         let currentStrugglePile = isSentenceMode ? strugglePileSentences : strugglePileWords;
         const pileIndex = currentStrugglePile.indexOf(currentText);
         if (pileIndex > -1) currentStrugglePile.splice(pileIndex, 1);
 
-        // --- FIREBASE SAVE ---
         if (window.saveScoreToFirebase) {
             window.saveScoreToFirebase(window.currentPlayerName, 1);
         }
 
-        // Game Progress
         if (isSentenceMode) {
             sentenceScore++;
         } else {
-            if (!correctWordsSet.has(currentText)) {
-                correctWordsSet.add(currentText);
-            }
+            if (!correctWordsSet.has(currentText)) correctWordsSet.add(currentText);
         }
         
         updateCharacterPosition();
@@ -719,9 +729,7 @@
         
         let hasWon = isSentenceMode ? (sentenceScore >= SENTENCE_GOAL) : (correctWordsSet.size >= WORD_GOAL);
         
-        if (!hasWon) {
-            setTimeout(() => { nextItem(); }, 800); 
-        }
+        if (!hasWon) setTimeout(() => { nextItem(); }, 800); 
     }
 
     function markWrong() {
@@ -737,10 +745,8 @@
         setTimeout(() => { nextItem(); }, 1500);
     }
 
-    // --- Animation & Movement ---
     function updateCharacterPosition() {
         const charEl = document.getElementById('character');
-        
         let currentProgress, goal;
         
         if (isSentenceMode) {
@@ -752,7 +758,6 @@
         }
 
         const hasWon = currentProgress >= goal;
-        
         let leftPos;
         if (hasWon) {
             leftPos = "calc(100% - 70px)";
@@ -768,7 +773,6 @@
 
         setTimeout(() => {
             charEl.classList.remove('jump-anim');
-            
             if (hasWon) {
                 triggerWin(); 
             } else {
@@ -798,7 +802,6 @@
 
     function resetGame() {
         if (celebrationInterval) clearInterval(celebrationInterval);
-        
         correctWordsSet.clear();
         sentenceScore = 0;
         strugglePileWords = [];
