@@ -42,6 +42,50 @@
             touch-action: manipulation;
         }
 
+        /* --- MODAL (Leaderboard Popup) --- */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .hidden { display: none !important; }
+        
+        .modal-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            max-height: 80vh;
+        }
+        
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-close {
+            background: #444;
+            color: white;
+            border: none;
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
         /* --- START SCREEN --- */
         #start-screen {
             position: fixed;
@@ -84,13 +128,18 @@
             align-items: center;
         }
 
+        /* Reusable Leaderboard Style */
+        .leaderboard-content {
+            padding: 15px;
+            width: 100%;
+            min-height: 200px;
+        }
+        
         .leaderboard-column {
             background: rgba(0,0,0,0.3);
             border-radius: 15px;
-            padding: 15px;
             width: 100%;
             height: 100%;
-            min-height: 250px;
             display: flex;
             flex-direction: column;
         }
@@ -201,7 +250,7 @@
         /* --- GAME UI --- */
         header {
             width: 100%;
-            padding: 15px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -209,6 +258,12 @@
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
             z-index: 20;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         .mode-toggle {
@@ -220,6 +275,18 @@
             border: none;
             border-radius: 20px;
             cursor: pointer;
+        }
+        
+        .btn-lb-toggle {
+            background: #F1C40F;
+            color: #121212;
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         main {
@@ -278,28 +345,26 @@
             display: none; 
         }
 
-        /* --- UPGRADED GAME WORLD --- */
+        /* --- GAME WORLD --- */
         .track-container {
             width: 100%;
             height: 200px;
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
-            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%); /* Clean sky */
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%); 
             border-top: 4px solid #4A90E2;
         }
 
-        /* Using SVG for the background scenery instead of CSS gradients */
         .scenery-svg {
             position: absolute;
-            bottom: 30px; /* Sits behind ground */
+            bottom: 30px; 
             left: 0;
             width: 100%;
             height: 100%;
             z-index: 1;
         }
 
-        /* The Ground Block */
         .ground {
             position: absolute;
             bottom: 0;
@@ -308,22 +373,19 @@
             background: #795548;
             border-top: 8px solid #4CAF50;
             z-index: 4;
-            /* Simple texture pattern */
             background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);
         }
 
-        /* --- CHARACTER --- */
         .character-wrapper {
             width: 75px; 
             height: 100px;
             position: absolute;
-            bottom: 28px; /* Sit on grass */
+            bottom: 28px;
             left: 10px;
             transition: left 0.5s ease-in-out, transform 0.3s;
             z-index: 10;
         }
         
-        /* Shadow under character */
         .char-shadow {
             width: 50px;
             height: 10px;
@@ -337,7 +399,6 @@
 
         .char-trophy { position: absolute; font-size: 2.5rem; top: -15px; right: -20px; z-index: 12; display: none; }
 
-        /* SVG STYLES */
         .char-svg { width: 100%; height: 100%; overflow: visible; }
         .skin-fill { fill: var(--char-skin); }
         .hair-fill { fill: var(--char-hair); }
@@ -355,7 +416,6 @@
         .obstacle { position: absolute; bottom: 35px; font-size: 2.5rem; z-index: 5; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); }
         .finish-line { position: absolute; right: 10px; bottom: 35px; font-size: 3.5rem; z-index: 5; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); }
 
-        /* Animations */
         .idle-anim { animation: bounce 2s infinite ease-in-out; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
@@ -375,33 +435,42 @@
 </head>
 <body class="style-short-hair"> 
 
+<div id="lb-modal" class="modal hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 style="margin:0">🏆 Weekly Leaders</h2>
+            <button class="btn-close" onclick="closeLeaderboard()">✖</button>
+        </div>
+        <div id="modal-leaderboard-content" class="leaderboard-content">
+            </div>
+        <div style="text-align: center; padding-bottom: 15px; color: #888; font-size: 0.8rem;">
+            Resets Every Monday
+        </div>
+    </div>
+</div>
+
 <div id="start-screen">
     <div class="setup-card">
         <div class="setup-grid">
             
             <div class="char-column">
                 <div class="preview-container">
-                    <div style="position:absolute; bottom:5px; width:50px; height:8px; background:rgba(0,0,0,0.2); border-radius:50%;"></div>
                     <svg class="char-svg" viewBox="0 0 100 120">
-                        <path class="hair-fill hair-long-back" d="M20,40 C10,90 20,100 50,100 C80,100 90,90 80,40" />
+                        <path class="hair-fill hair-long-back" d="M24,40 Q15,65 25,82 Q50,88 75,82 Q85,65 76,40" />
                         
-                        <path d="M35,85 L35,110 Q35,115 41,115 L47,115 Q53,115 53,110 L53,85" class="pants-fill" />
-                        <path d="M47,85 L47,110 Q47,115 53,115 L59,115 Q65,115 65,110 L65,85" class="pants-fill" />
-                        <ellipse cx="42" cy="115" rx="9" ry="5" fill="#111"/>
-                        <ellipse cx="58" cy="115" rx="9" ry="5" fill="#111"/>
-
-                        <path d="M25,55 Q25,45 50,45 Q75,45 75,55 L75,85 Q75,90 50,90 Q25,90 25,85 Z" class="shirt-fill"/>
-                        <circle cx="25" cy="60" r="10" class="shirt-fill" />
-                        <circle cx="75" cy="60" r="10" class="shirt-fill" />
-                        <circle cx="20" cy="70" r="6" class="skin-fill" />
-                        <circle cx="80" cy="70" r="6" class="skin-fill" />
-
-                        <circle cx="50" cy="35" r="26" class="skin-fill" />
-                        
-                        <ellipse cx="42" cy="35" rx="3" ry="4" fill="#333" />
-                        <circle cx="43" cy="33" r="1" fill="white" /> <ellipse cx="58" cy="35" rx="3" ry="4" fill="#333" />
-                        <circle cx="59" cy="33" r="1" fill="white" /> <path d="M46,45 Q50,48 54,45" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
-
+                        <rect x="35" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+                        <rect x="52" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+                        <path d="M33,110 Q41,115 49,110" stroke="#111" stroke-width="3" fill="none"/> 
+                        <path d="M51,110 Q59,115 67,110" stroke="#111" stroke-width="3" fill="none"/>
+                        <rect x="25" y="55" width="50" height="40" rx="8" class="shirt-fill" />
+                        <rect x="15" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(25 15 58)"/>
+                        <rect x="70" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(-25 85 58)"/>
+                        <circle cx="12" cy="72" r="6" class="skin-fill" />
+                        <circle cx="88" cy="72" r="6" class="skin-fill" />
+                        <circle cx="50" cy="38" r="24" class="skin-fill" />
+                        <circle cx="42" cy="36" r="3" fill="white" /> <circle cx="42" cy="36" r="1.5" fill="black" />
+                        <circle cx="58" cy="36" r="3" fill="white" /> <circle cx="58" cy="36" r="1.5" fill="black" />
+                        <path d="M45,46 Q50,50 55,46" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
                         <path class="hair-fill hair-short" d="M24,35 Q24,8 50,8 Q76,8 76,35 Q76,25 50,25 Q24,25 24,35" />
                         <path class="hair-fill hair-long-front" d="M24,35 Q24,8 50,8 Q76,8 76,35 Q76,22 50,22 Q24,22 24,35" />
                     </svg>
@@ -441,11 +510,10 @@
             </div>
 
             <div class="leaderboard-column">
-                <h2>🏆 Weekly Leaders</h2>
-                <div id="leaderboard-content">
+                <div class="leaderboard-content" id="start-leaderboard-content">
                     <div class="lb-loading">Loading...</div>
                 </div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: auto; padding-top:10px;">Resets Every Monday</div>
+                <div style="font-size: 0.8rem; color: #888; margin-top: auto; padding: 10px;">Resets Every Monday</div>
             </div>
 
             <button class="btn-start" onclick="startGame()">Let's Go!</button>
@@ -454,9 +522,15 @@
 </div>
 
 <header>
-    <div style="font-size: 1.2rem; font-weight: bold;">👤 <span id="display-name">Player</span></div>
-    <div style="font-size: 1rem; color: var(--success); font-weight: bold;">Weekly: <span id="weekly-score">0</span></div>
-    <button class="mode-toggle" onclick="toggleMode()">Mode: Words</button>
+    <div class="header-left">
+        <div style="font-size: 1.2rem; font-weight: bold;">👤 <span id="display-name">Player</span></div>
+        <div style="font-size: 1rem; color: var(--success); font-weight: bold;">Weekly: <span id="weekly-score">0</span></div>
+    </div>
+    
+    <div style="display:flex; gap:10px;">
+        <button class="btn-lb-toggle" onclick="openLeaderboard()" title="View Leaderboard">🏆</button>
+        <button class="mode-toggle" onclick="toggleMode()">Mode: Words</button>
+    </div>
 </header>
 
 <main>
@@ -481,13 +555,8 @@
         <path d="M0,200 Q250,100 500,160 T1000,160 V200 H0 Z" fill="#81C784" />
         <path d="M0,200 Q300,150 600,180 T1000,150 V200 H0 Z" fill="#66BB6A" />
         <g fill="white" opacity="0.6">
-            <circle cx="100" cy="50" r="30" />
-            <circle cx="140" cy="50" r="40" />
-            <circle cx="180" cy="50" r="30" />
-            
-            <circle cx="600" cy="80" r="25" />
-            <circle cx="640" cy="80" r="35" />
-            <circle cx="680" cy="80" r="25" />
+            <circle cx="100" cy="50" r="30" /> <circle cx="140" cy="50" r="40" /> <circle cx="180" cy="50" r="30" />
+            <circle cx="600" cy="80" r="25" /> <circle cx="640" cy="80" r="35" /> <circle cx="680" cy="80" r="25" />
         </g>
     </svg>
 
@@ -502,25 +571,21 @@
         <div class="char-shadow"></div>
         <div class="char-trophy" id="char-trophy">🏆</div>
         <svg class="char-svg" viewBox="0 0 100 120">
-            <path class="hair-fill hair-long-back" d="M20,40 C10,90 20,100 50,100 C80,100 90,90 80,40" />
+            <path class="hair-fill hair-long-back" d="M24,40 Q15,65 25,82 Q50,88 75,82 Q85,65 76,40" />
             
-            <path d="M35,85 L35,110 Q35,115 41,115 L47,115 Q53,115 53,110 L53,85" class="pants-fill" />
-            <path d="M47,85 L47,110 Q47,115 53,115 L59,115 Q65,115 65,110 L65,85" class="pants-fill" />
-            <ellipse cx="42" cy="115" rx="9" ry="5" fill="#111"/>
-            <ellipse cx="58" cy="115" rx="9" ry="5" fill="#111"/>
-
-            <path d="M25,55 Q25,45 50,45 Q75,45 75,55 L75,85 Q75,90 50,90 Q25,90 25,85 Z" class="shirt-fill"/>
-            <circle cx="25" cy="60" r="10" class="shirt-fill" />
-            <circle cx="75" cy="60" r="10" class="shirt-fill" />
-            <circle cx="20" cy="70" r="6" class="skin-fill" />
-            <circle cx="80" cy="70" r="6" class="skin-fill" />
-
-            <circle cx="50" cy="35" r="26" class="skin-fill" />
-            
-            <ellipse cx="42" cy="35" rx="3" ry="4" fill="#333" />
-            <circle cx="43" cy="33" r="1" fill="white" /> <ellipse cx="58" cy="35" rx="3" ry="4" fill="#333" />
-            <circle cx="59" cy="33" r="1" fill="white" /> <path d="M46,45 Q50,48 54,45" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
-
+            <rect x="35" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+            <rect x="52" y="85" width="13" height="25" class="pants-fill" rx="4"/>
+            <path d="M33,110 Q41,115 49,110" stroke="#111" stroke-width="3" fill="none"/> 
+            <path d="M51,110 Q59,115 67,110" stroke="#111" stroke-width="3" fill="none"/>
+            <rect x="25" y="55" width="50" height="40" rx="8" class="shirt-fill" />
+            <rect x="15" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(25 15 58)"/>
+            <rect x="70" y="58" width="15" height="14" rx="5" class="shirt-fill" transform="rotate(-25 85 58)"/>
+            <circle cx="12" cy="72" r="6" class="skin-fill" />
+            <circle cx="88" cy="72" r="6" class="skin-fill" />
+            <circle cx="50" cy="38" r="24" class="skin-fill" />
+            <circle cx="42" cy="36" r="3" fill="white" /> <circle cx="42" cy="36" r="1.5" fill="black" />
+            <circle cx="58" cy="36" r="3" fill="white" /> <circle cx="58" cy="36" r="1.5" fill="black" />
+            <path d="M45,46 Q50,50 55,46" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
             <path class="hair-fill hair-short" d="M24,35 Q24,8 50,8 Q76,8 76,35 Q76,25 50,25 Q24,25 24,35" />
             <path class="hair-fill hair-long-front" d="M24,35 Q24,8 50,8 Q76,8 76,35 Q76,22 50,22 Q24,22 24,35" />
         </svg>
@@ -531,27 +596,24 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // -----------------------------------------------------------------------------------------
-    // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
-    // -----------------------------------------------------------------------------------------
+    // --- INTEGRATED KEYS ---
     const firebaseConfig = {
         apiKey: "AIzaSyDjjBo73WLJGrM9RHG16BSm9by8mizPa4s",
-      authDomain: "kindergarten-reader.firebaseapp.com",
-      databaseURL: "https://kindergarten-reader-default-rtdb.firebaseio.com",
-      projectId: "kindergarten-reader",
-      storageBucket: "kindergarten-reader.firebasestorage.app",
-      messagingSenderId: "224702899339",
-      appId: "1:224702899339:web:d9e9edab8b40de1483e08e",
-      measurementId: "G-FDT770V70K"
+        authDomain: "kindergarten-reader.firebaseapp.com",
+        databaseURL: "https://kindergarten-reader-default-rtdb.firebaseio.com",
+        projectId: "kindergarten-reader",
+        storageBucket: "kindergarten-reader.firebasestorage.app",
+        messagingSenderId: "224702899339",
+        appId: "1:224702899339:web:d9e9edab8b40de1483e08e",
+        measurementId: "G-FDT770V70K"
     };
-    // -----------------------------------------------------------------------------------------
 
     let db;
     try {
         const app = initializeApp(firebaseConfig);
         db = getDatabase(app);
     } catch (e) {
-        document.getElementById('leaderboard-content').innerHTML = "<div class='lb-empty'>Database not connected.</div>";
+        console.error("Firebase Error", e);
     }
 
     function getWeekID() {
@@ -577,27 +639,32 @@
         
         onValue(lbRef, (snapshot) => {
             const data = snapshot.val();
-            const container = document.getElementById('leaderboard-content');
+            // We now have two places to update: Start Screen & Modal
+            const startContainer = document.getElementById('start-leaderboard-content');
+            const modalContainer = document.getElementById('modal-leaderboard-content');
             
+            let html = "";
+
             if (!data) {
-                container.innerHTML = '<div class="lb-empty">New Week! Be the first.</div>';
-                return;
+                html = '<div class="lb-empty">New Week! Be the first.</div>';
+            } else {
+                const sorted = Object.entries(data).sort(([,a], [,b]) => b - a).slice(0, 5);
+                html = '<table class="lb-table">';
+                sorted.forEach(([name, score], index) => {
+                    let rank = index + 1;
+                    let icon = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : rank + '.'));
+                    html += `<tr><td class="lb-rank">${icon}</td><td class="lb-name">${name}</td><td class="lb-score">${score}</td></tr>`;
+                });
+                html += '</table>';
+                
+                // Update personal score if name matches
+                if (window.currentPlayerName && data[window.currentPlayerName]) {
+                     document.getElementById('weekly-score').innerText = data[window.currentPlayerName];
+                }
             }
-
-            const sorted = Object.entries(data).sort(([,a], [,b]) => b - a).slice(0, 5);
-
-            let html = '<table class="lb-table">';
-            sorted.forEach(([name, score], index) => {
-                let rank = index + 1;
-                let icon = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : rank + '.'));
-                html += `<tr><td class="lb-rank">${icon}</td><td class="lb-name">${name}</td><td class="lb-score">${score}</td></tr>`;
-            });
-            html += '</table>';
-            container.innerHTML = html;
             
-            if (window.currentPlayerName && data[window.currentPlayerName]) {
-                 document.getElementById('weekly-score').innerText = data[window.currentPlayerName];
-            }
+            if(startContainer) startContainer.innerHTML = html;
+            if(modalContainer) modalContainer.innerHTML = html;
         });
     }
 
@@ -654,6 +721,15 @@
         const lastPlayer = localStorage.getItem('last_player_name');
         if (lastPlayer) document.getElementById('player-name').value = lastPlayer;
     };
+
+    // --- Modal Functions ---
+    function openLeaderboard() {
+        document.getElementById('lb-modal').classList.remove('hidden');
+    }
+    
+    function closeLeaderboard() {
+        document.getElementById('lb-modal').classList.add('hidden');
+    }
 
     function setSkin(color) { document.documentElement.style.setProperty('--char-skin', color); }
     function setHair(color) { document.documentElement.style.setProperty('--char-hair', color); }
@@ -812,7 +888,9 @@
     }
 
     function triggerWin() {
-        document.getElementById('display-text').innerText = "YOU DID IT!";
+        // --- PERSONALIZED MESSAGE ---
+        document.getElementById('display-text').innerText = `Great work ${window.currentPlayerName}!`;
+        
         document.getElementById('game-controls').style.display = 'none';
         document.getElementById('restart-btn').style.display = 'block';
 
