@@ -691,16 +691,19 @@
         "me", "at", "they", "look", "will", "has", "said", "was", "is", "and", 
         "I", "with", "can", "have", "go", "do", "she", "want", "am", "on", 
         "play", "you", "make", "my", "a", "like", "we", "see", "went", "what", 
-        "he", "to", "it", "the", "are", "mom", "dad"
+        "he", "to", "it", "the", "are", "mom", "dad", "down", "for", "little", "of", "this", "here"
     ];
 
     const wordBank = {
-        sub_singular: ["He", "She", "It", "Mom", "Dad"],
+        sub_singular: ["He", "She", "It", "Mom", "Dad", "This"],
         sub_plural: ["We", "They", "You"],
         verb_transitive: ["see", "make", "have", "want", "like"],
         verb_movement: ["play", "look", "go"],
         object_person: ["me", "you", "Mom", "Dad", "it", "us", "them"], 
-        modal: ["can", "will"]
+        modal: ["can", "will"],
+        adjective: ["little"],
+        location: ["here", "down"],
+        preposition: ["for", "at", "with", "on"]
     };
 
     const templates = [
@@ -716,7 +719,13 @@
         "Look at [object_person].",                     
         "Do you [verb_transitive] it?",                 
         "What do you [verb_transitive]?",               
-        "[sub_singular] said to [verb_movement]."       
+        "[sub_singular] said to [verb_movement].",
+        "This is for [object_person].",
+        "Look [location].", 
+        "[sub_singular] is [location].", 
+        "I am [adjective].", 
+        "[sub_singular] is [adjective].", 
+        "They look for [object_person]."
     ];
 
     let currentText = "";
